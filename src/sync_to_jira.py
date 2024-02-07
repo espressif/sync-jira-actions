@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2019 Espressif Systems (Shanghai) CO LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from jira import JIRA
-from github import Github
-import os
-import sys
 import json
+import os
+
+from github import Github
+from jira import JIRA
+from sync_issue import handle_comment_created
+from sync_issue import handle_comment_deleted
+from sync_issue import handle_comment_edited
+from sync_issue import handle_issue_closed
+from sync_issue import handle_issue_deleted
+from sync_issue import handle_issue_edited
+from sync_issue import handle_issue_labeled
+from sync_issue import handle_issue_opened
+from sync_issue import handle_issue_reopened
+from sync_issue import handle_issue_unlabeled
+from sync_issue import sync_issues_manually
 from sync_pr import sync_remain_prs
-from sync_issue import *
 
 
 class _JIRA(JIRA):
@@ -43,11 +53,11 @@ def main():
     # Check if the JIRA_PASS is token or password
     token_or_pass = os.environ['JIRA_PASS']
     if token_or_pass.startswith('token:'):
-        print("Authenticating with JIRA_TOKEN ...")
+        print('Authenticating with JIRA_TOKEN ...')
         token = token_or_pass[6:]  # Strip the 'token:' prefix
         jira = _JIRA(os.environ['JIRA_URL'], token_auth=token)
     else:
-        print("Authenticating with JIRA_USER and JIRA_PASS ...")
+        print('Authenticating with JIRA_USER and JIRA_PASS ...')
         jira = _JIRA(os.environ['JIRA_URL'], basic_auth=(os.environ['JIRA_USER'], token_or_pass))
 
     # Check if it's a cron job
@@ -56,13 +66,14 @@ def main():
         return
 
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
-    with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
-        event = json.load(f)
+    with open(os.environ['GITHUB_EVENT_PATH'], 'r', encoding='utf-8') as file:
+        event = json.load(file)
         print(json.dumps(event, indent=4))
 
     event_name = os.environ['GITHUB_EVENT_NAME']
 
-    # Check if event is workflow_dispatch and action is mirror issues. If so, run manual mirroring and skip rest of the script. Works both for issues and pull requests.
+    # Check if event is workflow_dispatch and action is mirror issues.
+    # If so, run manual mirroring and skip rest of the script. Works both for issues and pull requests.
     if event_name == 'workflow_dispatch':
         inputs = event.get('inputs')
 
@@ -84,23 +95,23 @@ def main():
         return
 
     # The name of the webhook event that triggered the workflow.
-    action = event["action"]
+    action = event['action']
 
     if event_name == 'pull_request':
         # Treat pull request events just like issues events for syncing purposes
         # (we can check the 'pull_request' key in the "issue" later to know if this is an issue or a PR)
         event_name = 'issues'
-        event["issue"] = event["pull_request"]
-        if "pull_request" not in event["issue"]:
-            event["issue"]["pull_request"] = True  # we don't care about the value
+        event['issue'] = event['pull_request']
+        if 'pull_request' not in event['issue']:
+            event['issue']['pull_request'] = True  # we don't care about the value
 
     # don't sync if user is our collaborator
     github = Github(os.environ['GITHUB_TOKEN'])
     repo = github.get_repo(os.environ['GITHUB_REPOSITORY'])
-    gh_issue = event["issue"]
-    is_pr = "pull_request" in gh_issue
-    if is_pr and repo.has_in_collaborators(gh_issue["user"]["login"]):
-        print("Skipping issue sync for Pull Request from collaborator")
+    gh_issue = event['issue']
+    is_pr = 'pull_request' in gh_issue
+    if is_pr and repo.has_in_collaborators(gh_issue['user']['login']):
+        print('Skipping issue sync for Pull Request from collaborator')
         return
 
     action_handlers = {
@@ -121,12 +132,12 @@ def main():
     }
 
     if event_name not in action_handlers:
-        print("No handler for event '%s'. Skipping." % event_name)
+        print(f"No handler for event '{event_name}'. Skipping.")
     elif action not in action_handlers[event_name]:
-        print("No handler '%s' action '%s'. Skipping." % (event_name, action))
+        print(f"No handler '{event_name}' action '{action}'. Skipping.")
     else:
         action_handlers[event_name][action](jira, event)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
