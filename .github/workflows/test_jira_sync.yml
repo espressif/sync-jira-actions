@@ -11,6 +11,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Test JIRA sync
-        uses: ./sync_issues_to_jira
+        uses: .
         with:
-          entrypoint: ./sync_issues_to_jira/test_sync_to_jira.py
+          entrypoint: ./test_sync_to_jira.py

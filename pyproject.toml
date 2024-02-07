@@ -1,0 +1,82 @@
+[build-system]
+    requires = ["setuptools-scm>=8.0", "setuptools>=60"]
+
+[project]
+    authors = [
+        { name = "Tomas Sebestik (Espressif Systems)", email = "tomas.sebestik@espressif.com" },
+    ]
+    classifiers = ["Programming Language :: Python :: 3"]
+    description = "Espressif GitHub Actions for JIRA synchronization"
+    dynamic = ["version"]
+    name = "sync-jira-actions"
+    readme = "README.md"
+    requires-python = ">=3.11"
+
+    dependencies = ["PyGithub==2.2.0", "jira==3.6.0"]
+
+    [project.optional-dependencies]
+        dev = [
+            "commitizen",
+            "pip-tools~=7.3",
+            "pre-commit>=3.3",
+            "pytest",
+            "pytest-cov",
+        ]
+
+[tool.setuptools_scm]
+    write_to = "sync_jira_actions/version.py"
+
+[tool.black]
+    line-length               = 120  # The maximum line length for Python code formatting
+    skip-string-normalization = true # Avoids converting single quotes to double quotes in strings (pre-commit hook enforces single quotes in Python code)
+
+[tool.ruff]
+    line-length    = 120             # Specifies the maximum line length for ruff checks
+    select         = ['E', 'F', 'W'] # Types of issues ruff should check for
+    target-version = "py311"          # Specifies the target Python version for ruff checks
+
+[tool.mypy]
+    disallow_incomplete_defs = false    # Disallows defining functions with incomplete type annotations
+    disallow_untyped_defs    = false    # Disallows defining functions without type annotations or with incomplete type annotations
+    exclude                  = '^venv/' # Paths to ignore during type checking
+    ignore_missing_imports   = true     # Suppress error messages about imports that cannot be resolved
+    python_version           = "3.11"    # Specifies the Python version used to parse and check the target program
+    warn_no_return           = true     # Shows errors for missing return statements on some execution paths
+    warn_return_any          = true     # Shows a warning when returning a value with type Any from a function declared with a non- Any return type
+
+[tool.pylint]
+    [tool.pylint.MASTER]
+        ignore-paths = ["tests/.*"] # Paths to ignore during linting
+    [tool.pylint.'BASIC']
+        variable-rgx = "[a-z_][a-z0-9_]{1,30}$" # Variable names must start with a lowercase letter or underscore, followed by any combination of lowercase letters, numbers, or underscores, with a total length of 2 to 30 characters.
+    [tool.pylint.'MESSAGES CONTROL']
+        disable = [
+            "duplicate-code",                # R0801: Similar lines in %s files
+            "fixme",                         # W0511: Used when TODO/FIXME is encountered
+            "import-error",                  # E0401: Used when pylint has been unable to import a module
+            "import-outside-toplevel",       # E0402: Imports should usually be on top of the module
+            "logging-fstring-interpolation", # W1202: Use % formatting in logging functions and pass the % parameters as arguments
+            "missing-class-docstring",       # C0115: Missing class docstring
+            "missing-function-docstring",    # C0116: Missing function or method docstring
+            "missing-module-docstring",      # C0114: Missing module docstring
+            "no-name-in-module",             # W0611: Used when a name cannot be found in a module
+            "too-few-public-methods",        # R0903: Too few public methods of class
+            "too-many-branches",             # R0912: Too many branches
+            "too-many-locals",               # R0914: Too many local variables
+            "too-many-return-statements",    # R0911: Too many return statements
+            "too-many-statements",           # R0915: Too many statements
+            "ungrouped-imports",             # C0412: Imports should be grouped by packages
+        ]
+    [tool.pylint.'FORMAT']
+        max-line-length = 120 # Specifies the maximum line length for pylint checks
+
+
+[tool.pytest.ini_options]
+    addopts          = "-s --log-cli-level DEBUG --cov=. --cov-report=term"
+    python_classes   = ["Test*"]
+    python_files     = ["test_*.py"]
+    python_functions = ["test_*"]
+    testpaths        = ["tests"]
+
+[tool.coverage.run]
+    omit = ["__*__.py", "tests/*"]
