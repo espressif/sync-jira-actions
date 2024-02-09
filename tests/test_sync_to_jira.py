@@ -23,7 +23,7 @@ def sync_to_jira_main(monkeypatch):
     monkeypatch.setattr('jira.JIRA', MagicMock())
 
     # Import the main function dynamically after applying mocks
-    from src.sync_to_jira import main as dynamically_imported_main
+    from sync_jira_actions.sync_to_jira import main as dynamically_imported_main
 
     return dynamically_imported_main
 
@@ -56,6 +56,6 @@ def test_handle_issue_opened_event(mock_environment, sync_to_jira_main, monkeypa
     mock_environment.write_text(json.dumps(event_data))
     monkeypatch.setenv('GITHUB_EVENT_NAME', 'issues')
 
-    with patch('src.sync_to_jira.handle_issue_opened') as mock_handle_issue_opened:
+    with patch('sync_jira_actions.sync_to_jira.handle_issue_opened') as mock_handle_issue_opened:
         sync_to_jira_main()
         mock_handle_issue_opened.assert_called_once()

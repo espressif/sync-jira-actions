@@ -30,7 +30,7 @@ def mock_jira_client():
 @pytest.fixture
 def sync_issue_module(github_client_mock):
     from importlib import reload
-    from src import sync_issue
+    from sync_jira_actions import sync_issue
 
     reload(sync_issue)  # Reload to apply the mocked Github client
     return sync_issue
@@ -52,9 +52,10 @@ def test_handle_issue_opened_creates_jira_issue(sync_issue_module, github_client
         }
     }
 
-    with patch('src.sync_issue._find_jira_issue', return_value=None) as mock_find_jira_issue, patch(
-        'src.sync_issue._create_jira_issue'
-    ) as mock_create_jira_issue:
+    with (
+        patch('sync_jira_actions.sync_issue._find_jira_issue', return_value=None) as mock_find_jira_issue,
+        patch('sync_jira_actions.sync_issue._create_jira_issue') as mock_create_jira_issue,
+    ):
         sync_issue_module.handle_issue_opened(mock_jira_client, mock_event)
 
         mock_find_jira_issue.assert_called_once()
@@ -89,8 +90,9 @@ def test_handle_issue_labeled_adds_label(sync_issue_module, github_client_mock, 
 
     mock_jira_issue.update = MagicMock(side_effect=update_labels)
 
-    with patch('src.sync_issue._find_jira_issue', return_value=mock_jira_issue), patch(
-        'src.sync_issue._get_jira_label', side_effect=lambda x: x['name']
+    with (
+        patch('sync_jira_actions.sync_issue._find_jira_issue', return_value=mock_jira_issue),
+        patch('sync_jira_actions.sync_issue._get_jira_label', side_effect=lambda x: x['name']),
     ):
         sync_issue_module.handle_issue_labeled(mock_jira_client, mock_event)
 
