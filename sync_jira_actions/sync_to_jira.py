@@ -62,6 +62,7 @@ def main():
 
     # Check if it's a cron job
     if os.environ.get('INPUT_CRON_JOB'):
+        print('Running as a cron job. Syncing remaining PRs...')
         sync_remain_prs(jira)
         return
 

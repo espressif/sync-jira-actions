@@ -33,10 +33,10 @@ def mock_github():
 
 @pytest.fixture
 def sync_pr_module(mock_github):
-    # Import the module from the src directory
+    # Import the module from the sync_jira_actions directory
     import sys
 
-    sys.path.insert(0, 'src')  # Add src directory to the Python path
+    sys.path.insert(0, 'sync_jira_actions')  # Add sync_jira_actions directory to the Python path
     import sync_pr
 
     # Reload the module to ensure the mock is applied
@@ -47,9 +47,10 @@ def sync_pr_module(mock_github):
 
 @pytest.fixture
 def mock_sync_issue():
-    with patch('sync_pr._create_jira_issue') as mock_create_jira_issue, patch(
-        'sync_pr._find_jira_issue', return_value=None
-    ) as mock_find_jira_issue:
+    with (
+        patch('sync_pr._create_jira_issue') as mock_create_jira_issue,
+        patch('sync_pr._find_jira_issue', return_value=None) as mock_find_jira_issue,
+    ):
         yield mock_create_jira_issue, mock_find_jira_issue
 
 

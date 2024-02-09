@@ -29,7 +29,7 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 RUN npm i -g @shogobg/markdown2confluence@0.1.6
 
 # Copy Python scripts
-COPY src/ /src
+COPY sync_jira_actions/ /sync_jira_actions
 
 # Define the entrypoint to use the virtual environment's Python interpreter
 ENTRYPOINT ["/opt/venv/bin/python", "/sync_jira_actions/sync_to_jira.py"]

@@ -108,10 +108,7 @@ name: Sync remaining PRs to Jira
 # Note that PRs can also get synced when a new PR comment is created
 on:
   schedule:
-    - cron: '0 * * * *'
-
-# Limit to single concurrent run for workflows which can create Jira issues.
-# Same concurrency group is used in issue_comment.yml
+    - cron: "0 * * * *"
 concurrency: jira_issues
 
 jobs:
@@ -149,11 +146,11 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Action to be performed'
+        description: "Action to be performed"
         required: true
-        default: 'mirror-issues'
+        default: "mirror-issues"
       issue-numbers:
-        description: 'Issue numbers'
+        description: "Issue numbers"
         required: true
 
 concurrency: jira_issues

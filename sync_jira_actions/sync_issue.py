@@ -415,7 +415,7 @@ def _get_jira_issue_type(jira, gh_issue):
             print('GitHub label is \'Type: Feature Request\'. Mapping to New Feature Jira issue type')
             return {'id': JIRA_NEW_FEATURE_TYPE_ID}  # JIRA API needs JSON here
         # Some projects use Label with bug icon represented by ":bug:" in label name.
-        # This if mathes those to Bug Jira issue type
+        # This if matches those to Bug Jira issue type
         if gh_label == 'Type: Bug :bug:':
             print('GitHub label is \'Type: Bug :bug:\'. Mapping to Bug Jira issue type')
             return {'id': JIRA_BUG_TYPE_ID}  # JIRA API needs JSON here
