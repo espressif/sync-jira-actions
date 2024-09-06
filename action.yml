@@ -29,8 +29,8 @@ inputs:
   action: # Required only for 'workflow_dispatch' trigger, handled by code logic
     description: 'Manual action type'
 
-  issue-or-pr-numbers: # Required only for 'workflow_dispatch' trigger, handled by code logic
-    description: 'Issue / Pull Requests numbers to (comma-separated)'
+  issue-numbers: # Required only for 'workflow_dispatch' trigger, handled by code logic
+    description: 'Issue numbers to sync (comma-separated)'
 
 runs:
   using: composite
@@ -38,7 +38,7 @@ runs:
     - name: Checkout action repository (espressif/sync-jira-actions)
       uses: actions/checkout@v4
       with:
-        repository: espressif/sync-jira-actions  # TODO: switch to V1 before merge !
+        repository: espressif/sync-jira-actions
 
     - name: Set up Python
       uses: actions/setup-python@v5

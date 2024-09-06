@@ -18,11 +18,7 @@
 
 ### ✨ New features
 
-- **action**: updated this action from Docker to Composite type *(Tomas Sebestik - d926676)*
-
-### 🐛 Bug fixes
-
-- add dynamic ref to action.yml file for development testing *(Tomas Sebestik - 39cd704)*
+- **action**: updated this action from Docker to Composite type *(Tomas Sebestik - 385fb14)*
 
 ### 📖 Documentation
 

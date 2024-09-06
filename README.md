@@ -25,16 +25,9 @@ This action automates the integration of your GitHub repositories with JIRA proj
 - [Issue Type Synchronization](#issue-type-synchronization)
   - [How It Works](#how-it-works)
 - [Limitations](#limitations)
-  - [What's Not Synced](#whats-not-synced)
-- [Usage Instructions for GitHub to JIRA Issue Sync Action](#usage-instructions-for-github-to-jira-issue-sync-action)
-  - [Syncing New Issues to JIRA](#syncing-new-issues-to-jira)
-  - [Syncing New Issue Comments to JIRA](#syncing-new-issue-comments-to-jira)
-  - [Syncing New Pull Requests to JIRA](#syncing-new-pull-requests-to-jira)
-- [Manually Syncing Issues and Pull Requests to JIRA](#manually-syncing-issues-and-pull-requests-to-jira)
-  - [Configuration for Manual Sync](#configuration-for-manual-sync)
-  - [Workflow Setup](#workflow-setup)
-- [Environment Variables and Secrets Configuration](#environment-variables-and-secrets-configuration)
-  - [Important Consideration:](#important-consideration)
+- [Caller project workflow file](#caller-project-workflow-file)
+- [Sync Issues and Pull Requests to JIRA manually](#sync-issues-and-pull-requests-to-jira-manually)
+- [Environment Variables and Secrets](#environment-variables-and-secrets)
 - [Project Issues](#project-issues)
 - [Contributing](#contributing)
 
@@ -92,144 +85,88 @@ The GitHub to JIRA Issue Sync Action intelligently creates JIRA issues with spec
 
 There are certain limitations to the data and events that can be synchronized:
 
-### What's Not Synced
-
 - **Labels**: The action does not sync labels between GitHub and JIRA, with the exception of labels that match JIRA issue types. This means that general labels used for categorization or prioritization in GitHub won't automatically reflect in JIRA.
 - **Transitions**: Changes in the status of a GitHub issue, such as closing, reopening, or deleting, do not automatically result in the corresponding transition of the JIRA issue's status. Instead, these actions result in a comment being added to the linked JIRA issue to record the event. This design choice accounts for scenarios where a GitHub issue might be closed by its reporter, but the underlying problem it documents still requires attention and resolution within the JIRA project.
 
-## Usage Instructions for GitHub to JIRA Issue Sync Action
-
-This GitHub Action provides a comprehensive solution for integrating GitHub with JIRA, ensuring that issues, comments, and pull requests in GitHub are seamlessly synced to JIRA. Below are the setups to synchronize different types of activities from GitHub to JIRA.
-
-### Syncing New Issues to JIRA
-
-Automatically creates a corresponding JIRA issue when a new issue is opened in GitHub.
+## Caller project workflow file
 
 ```yaml
+# FILE: .github/workflows/sync-jira.yml
 ---
 # This GitHub Actions workflow synchronizes GitHub issues, comments, and pull requests with Jira.
 # It triggers on new issues, issue comments, and on a scheduled basis.
 # The workflow uses a custom action to perform the synchronization with Jira (espressif/sync-jira-actions).
 
-name: 🔷 Sync to Jira.
+name: 🔷 Sync to Jira
 
-on: issues
-concurrency: jira_issues
+run-name: >
+  Sync to Jira -
+  ${{ github.event_name == 'issue_comment' && 'Issue Comment' ||
+      github.event_name == 'schedule' && 'New Pull Requests' ||
+      github.event_name == 'issues' && 'New Issue' ||
+      github.event_name == 'workflow_dispatch' && 'Manual Sync' }}
+
+on:
+  issues: {types: [opened]}
+  issue_comment: {types: [created, edited, deleted]}
+  schedule: [cron: '0 * * * *']
+  workflow_dispatch:
+    inputs:
+      action: {description: 'Action to be performed', required: true, default: 'mirror-issues'}
+      issue-numbers: {description: 'Issue numbers to sync (comma-separated)', required: true}
 
 jobs:
-  sync_issues_to_jira:
+  sync-to-jira:
+    name: >
+      Sync to Jira -
+      ${{ github.event_name == 'issue_comment' && 'Issue Comment' ||
+          github.event_name == 'schedule' && 'New Pull Requests' ||
+          github.event_name == 'issues' && 'New Issue' ||
+          github.event_name == 'workflow_dispatch' && 'Manual Sync' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v4
 
-      - name: Sync GitHub issues to Jira project
+      - name: Run synchronization to Jira
         uses: espressif/sync-jira-actions@v1
         with:
           cron_job: ${{ github.event_name == 'schedule' && 'true' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIRA_PASS: ${{ secrets.JIRA_PASS }}
-          JIRA_PROJECT: SOMEPROJECT # define the JIRA project here
-          JIRA_COMPONENT: SOMECOMPONENT # define (optional) JIRA component here
-          JIRA_URL: ${{ secrets.JIRA_URL }}
-          JIRA_USER: ${{ secrets.JIRA_USER }}
-          JIRA_PROJECT: IDFSYNTEST # <------Update for Jira key of your project
+          JIRA_PROJECT: IDFSYNTEST   # <---- update for your Jira project
           JIRA_COMPONENT: GitHub
-```
-
-### Syncing New Issue Comments to JIRA
-
-Ensures that comments made on GitHub issues are also reflected in the corresponding JIRA issue.
-
-```yaml
-name: Sync issue comments to JIRA
-on: issue_comment
-```
-
-### Syncing New Pull Requests to JIRA
-
-Due to security reasons related to the privileges of PR submitter's repositories, syncing pull requests requires a different approach, using a cron job to regularly check for and sync new pull requests.
-
-```yaml
-name: Sync remaining PRs to Jira
-
-on:
-  schedule:
-    - cron: "0 * * * *"
-concurrency: jira_issues
-
-jobs:
-  sync_prs_to_jira:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Sync PRs to Jira project
-        uses: espressif/sync-jira-actions@v1
-        with:
-          cron_job: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JIRA_PASS: ${{ secrets.JIRA_PASS }}
-          JIRA_PROJECT: SOMEPROJECT # define the JIRA project here
-          JIRA_COMPONENT: SOMECOMPONENT # define (optional) JIRA component here
           JIRA_URL: ${{ secrets.JIRA_URL }}
           JIRA_USER: ${{ secrets.JIRA_USER }}
 ```
 
-## Manually Syncing Issues and Pull Requests to JIRA
+> \[!TIP\]
+> In this repository, there is a file named [sync-jira.yml](https://github.com/espressif/sync-jira-actions/blob/v1/docs/sync-jira.yml).
+> You can download it and place it in your project at `.github/workflows/sync-jira.yml`.
 
-For cases where you need to manually sync issues and pull requests that were not automatically captured by the [Sync a new issue to Jira](#sync-a-new-issue-to-jira) and [Sync a new pull request to Jira](#sync-a-new-pull-request-to-jira) workflows, this GitHub Action provides a solution. It allows for the manual synchronization of both new and old issues and pull requests directly to your JIRA project.
+## Sync Issues and Pull Requests to JIRA manually
 
-### Configuration for Manual Sync
+For cases where you need to manually sync issues and pull requests that were not automatically captured by the [Sync Jira workflow](#caller-project-workflow-file), this GitHub Action provides a solution. It allows for the manual synchronization of both new and old issues and pull requests directly to your JIRA project.
 
 This action introduces two parameters for manual triggering:
 
 - `action`: Specifies the action to be performed, with a default value of `mirror-issues`.
 - `issue-numbers`: Lists the numbers of the issues and pull requests that you wish to sync to JIRA.
 
-### Workflow Setup
-
-To set up the manual sync action, include the following workflow in your GitHub repository:
-
-```yaml
-name: Manually trigger sync issue to Jira
-
-on:
-  workflow_dispatch:
-    inputs:
-      action:
-        description: "Action to be performed"
-        required: true
-        default: "mirror-issues"
-      issue-numbers:
-        description: "Issue numbers"
-        required: true
-concurrency: jira_issues
-
-jobs:
-  sync_issues_to_jira:
-    name: Sync issues to Jira
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Sync GitHub issues to Jira project
-        uses: espressif/sync-jira-actions@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JIRA_PASS: ${{ secrets.JIRA_PASS }}
-          JIRA_PROJECT: SOMEPROJECT # define the JIRA project here
-          JIRA_COMPONENT: SOMECOMPONENT # define (optional) JIRA component here
-          JIRA_URL: ${{ secrets.JIRA_URL }}
-          JIRA_USER: ${{ secrets.JIRA_USER }}
-```
-
-This workflow can be triggered manually from the GitHub Actions tab in your repository, allowing you to specify the issues or pull requests to be synced by entering their numbers.
+This workflow can be triggered manually from the Actions tab in your repository, allowing you to specify the issues or pull requests to be synced by entering their numbers.
 
 This ensures that even items not caught by the automatic sync process can still be integrated into your JIRA project for tracking and management.
 
-## Environment Variables and Secrets Configuration
+## Environment Variables and Secrets
+
+> \[!NOTE\]
+> For Espressif projects ([https://github.com/espressif/](https://github.com/espressif/)), you don't need to set any environment variables.
+> This action workflow will work out of the box, as the variables important for authentication with Jira are inherited from the organization level.
 
 The GitHub to JIRA Issue Sync workflow requires the configuration of specific environment variables and secrets to operate effectively. These settings ensure the correct creation and updating of issues within your JIRA project based on activities in your GitHub repository.
 
@@ -244,9 +181,10 @@ Below is a detailed table outlining the necessary configurations:
 | `JIRA_USER`       | The username used for logging into JIRA (basic auth).                                        | Inherited   |
 | `JIRA_PASS`       | The JIRA token (for token auth) or password (for basic auth) used for logging in.            | Inherited   |
 
-### Important Consideration:
+- **GitHub Organizational Secrets**: `JIRA_URL`, `JIRA_USER`, `JIRA_PASS` - These secrets are **inherited from the GitHub organizational secrets, as they are common to all projects within the organization**.
 
-- **GitHub Organizational Secrets**: `JIRA_URL`, `JIRA_USER`, `JIRA_PASS` - These secrets are **inherited from the GitHub organizational secrets, as they are common to all projects within the organization**. It is advised not to set these secrets at the individual repository level to avoid conflicts and ensure a unified configuration across all projects.
+> \[!WARNING\]
+> Do not to set secrets at the individual repository level to avoid conflicts and ensure a unified configuration across all projects.
 
 - **Token as JIRA_PASS**: When using a token for `JIRA_PASS`, prefix the token value with `token:` (e.g., `token:Xyz123**************ABC`). This prefix helps distinguish between password and token types, and it will be removed by the script before making the API call.
 
@@ -254,7 +192,7 @@ Below is a detailed table outlining the necessary configurations:
 
 ## Project Issues
 
-If you encounter any issues, feel free to report them in the project's issues or create Pull Request with your suggestion.
+If you encounter any issues, feel free to report them in [this project's issues](https://github.com/espressif/sync-jira-actions/issues) or create Pull Request with your suggestion.
 
 ## Contributing
 

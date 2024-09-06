@@ -38,7 +38,7 @@ class _JIRA(JIRA):
         return []  # disable this function as we don't need it and it makes add_remote_links() slow
 
 
-def main():
+def main():  # noqa
     if 'GITHUB_REPOSITORY' not in os.environ:
         print('❌ Not running in GitHub action context, nothing to do')
         return
@@ -74,7 +74,7 @@ def main():
         return
 
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
-    with open(os.environ['GITHUB_EVENT_PATH'], 'r', encoding='utf-8') as file:
+    with open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8') as file:
         event = json.load(file)
         if os.environ.get('ACTIONS_RUNNER_DEBUG') == 'true':
             print(json.dumps(event, indent=4))

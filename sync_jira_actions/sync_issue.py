@@ -229,9 +229,11 @@ def _markdown2wiki(markdown):
 
         try:
             subprocess.check_call(['npx', 'markdown2confluence', md_path, conf_path])  # noqa: S603, S607
-            with open(conf_path, 'r', encoding='utf-8') as file:
+            with open(conf_path, encoding='utf-8') as file:
                 result = file.read()
-            if len(result) > 16384:  # limit any single body of text to 16KB (JIRA API limits total text to 32KB)
+            if (
+                len(result) > 16384  # noqa: PLR2004
+            ):  # limit any single body of text to 16KB (JIRA API limits total text to 32KB)
                 result = result[:16376] + '\n\n[...]'  # add newlines to encourage end of any formatting blocks
             return result
         except subprocess.CalledProcessError as error:
