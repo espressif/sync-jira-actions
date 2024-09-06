@@ -106,7 +106,12 @@ This GitHub Action provides a comprehensive solution for integrating GitHub with
 Automatically creates a corresponding JIRA issue when a new issue is opened in GitHub.
 
 ```yaml
-name: Sync issues to Jira
+---
+# This GitHub Actions workflow synchronizes GitHub issues, comments, and pull requests with Jira.
+# It triggers on new issues, issue comments, and on a scheduled basis.
+# The workflow uses a custom action to perform the synchronization with Jira (espressif/sync-jira-actions).
+
+name: 🔷 Sync to Jira.
 
 on: issues
 concurrency: jira_issues
@@ -119,6 +124,8 @@ jobs:
 
       - name: Sync GitHub issues to Jira project
         uses: espressif/sync-jira-actions@v1
+        with:
+          cron_job: ${{ github.event_name == 'schedule' && 'true' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIRA_PASS: ${{ secrets.JIRA_PASS }}
@@ -126,6 +133,8 @@ jobs:
           JIRA_COMPONENT: SOMECOMPONENT # define (optional) JIRA component here
           JIRA_URL: ${{ secrets.JIRA_URL }}
           JIRA_USER: ${{ secrets.JIRA_USER }}
+          JIRA_PROJECT: IDFSYNTEST # <------Update for Jira key of your project
+          JIRA_COMPONENT: GitHub
 ```
 
 ### Syncing New Issue Comments to JIRA
@@ -228,12 +237,12 @@ Below is a detailed table outlining the necessary configurations:
 
 | Variable/Secret   | Description                                                                                  | Requirement |
 | ----------------- | -------------------------------------------------------------------------------------------- | ----------- |
-| `JIRA_PROJECT`    | The slug of the JIRA project where new issues will be created.                               | Mandatory   |
+| `JIRA_PROJECT`    | Specifies the Jira project to synchronize with.                                              | Mandatory   |
+| `JIRA_ISSUE_TYPE` | Specifies the JIRA issue type for new issues. Defaults to "Task" if not set.                 | Optional    |
+| `JIRA_COMPONENT`  | The name of a JIRA component to add to every synced issue. The component must exist in JIRA. | Optional    |
 | `JIRA_URL`        | The main URL of your JIRA instance.                                                          | Inherited   |
 | `JIRA_USER`       | The username used for logging into JIRA (basic auth).                                        | Inherited   |
 | `JIRA_PASS`       | The JIRA token (for token auth) or password (for basic auth) used for logging in.            | Inherited   |
-| `JIRA_ISSUE_TYPE` | Specifies the JIRA issue type for new issues. Defaults to "Task" if not set.                 | Optional    |
-| `JIRA_COMPONENT`  | The name of a JIRA component to add to every synced issue. The component must exist in JIRA. | Optional    |
 
 ### Important Consideration:
 

@@ -26,13 +26,19 @@ inputs:
     description: 'The type of JIRA issue to be created if no labels to the issue are set. Default = "Task"'
     default: 'Task'
 
+  action: # Required only for 'workflow_dispatch' trigger, handled by code logic
+    description: 'Manual action type'
+
+  issue-or-pr-numbers: # Required only for 'workflow_dispatch' trigger, handled by code logic
+    description: 'Issue / Pull Requests numbers to (comma-separated)'
+
 runs:
   using: composite
   steps:
     - name: Checkout action repository (espressif/sync-jira-actions)
       uses: actions/checkout@v4
       with:
-        repository: espressif/sync-jira-actions
+        repository: espressif/sync-jira-actions  # TODO: switch to V1 before merge !
 
     - name: Set up Python
       uses: actions/setup-python@v5

@@ -1,0 +1,32 @@
+---
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    versioning-strategy: increase-if-necessary
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    commit-message:
+      prefix: "ci(dependabot-pip): "
+    reviewers: ["espressif/ci"]
+
+  - package-ecosystem: "npm"
+    versioning-strategy: increase-if-necessary
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    commit-message:
+      prefix: "ci(dependabot-npm): "
+    reviewers: ["espressif/ci"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    commit-message:
+      prefix: "ci(dependabot-actions): "
+    reviewers: ["espressif/ci"]

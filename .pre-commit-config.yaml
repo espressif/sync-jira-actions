@@ -1,69 +1,83 @@
-# Run `pre-commit autoupdate` to update to the latest pre-commit hooks version.
-# When changing the version of tools that are also installed as development dependencies (e.g., black, mypy, ruff),
-#  please ensure the same versions are pinned in this file as in `pyproject.toml`.
 ---
-minimum_pre_commit_version: 3.3.0 # Specifies the minimum version of pre-commit required for this configuration
-default_install_hook_types: [pre-commit, commit-msg] # Default hook types to install if not specified in individual hooks
+minimum_pre_commit_version: 3.3.0
+default_install_hook_types: [pre-commit, commit-msg]
 default_stages: [pre-commit]
 
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+  - repo: meta
     hooks:
-      - id: trailing-whitespace # Removes trailing whitespaces from lines
-      - id: end-of-file-fixer # Ensures files end with a newline
-      - id: check-executables-have-shebangs # Checks executables have a proper shebang
-      - id: mixed-line-ending # Detects mixed line endings (CRLF/LF)
-        args: ['-f=lf'] # Forces files to use LF line endings
-      - id: double-quote-string-fixer # Converts single quotes to double quotes in strings
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: ['-f=lf']
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.2.1
+    rev: v0.6.8
     hooks:
-      - id: ruff # Runs ruff linter (replaces flake8)
+      - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-
-  - repo: https://github.com/asottile/reorder_python_imports
-    rev: v3.12.0
-    hooks:
-      - id: reorder-python-imports # Reorders Python imports to a standard format (replaces isort)
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.11.2
     hooks:
-      - id: mypy # Runs mypy for Python type checking
-        additional_dependencies: ['types-all']
+      - id: mypy
 
   - repo: https://github.com/espressif/conventional-precommit-linter
-    rev: v1.6.0
+    rev: v1.10.0
     hooks:
-      - id: conventional-precommit-linter # Lints commit messages for conventional format
+      - id: conventional-precommit-linter
         stages: [commit-msg]
 
-  - repo: https://github.com/psf/black
-    rev: '24.1.1'
-    hooks:
-      - id: black # Formats Python code using black
-
-  - repo: https://github.com/pylint-dev/pylint
-    rev: v3.0.3
-    hooks:
-      - id: pylint # Runs pylint on Python code
-
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
-      - id: codespell # Code spell checker
-        args: ["--write-changes"]
+      - id: codespell
+        args: ['--write-changes']
         additional_dependencies: [tomli]
 
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        args: [--number]
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-ruff
+          - mdformat-simple-breaks
 
-  # Local hooks
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args:
+          - --base64-limit=4
+          - --hex-limit=3
+
+  - repo: https://github.com/lyz-code/yamlfix/
+    rev: 1.17.0
+    hooks:
+      - id: yamlfix
+
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+
   - repo: local
     hooks:
       - id: pip-compile
         name: compile requirements.txt
-        entry: bash -c 'pip-compile --output-file=requirements.txt pyproject.toml > /dev/null'
+        entry: bash -c 'pip-compile --strip-extras --output-file=requirements.txt pyproject.toml > /dev/null'
         language: system
         pass_filenames: false
         files: requirements.txt|pyproject.toml

@@ -62,6 +62,7 @@ We welcome contributions! To contribute to this repository, please read these in
   ```
 
 - Install the project and development dependencies:
+
   ```sh
   pip install -e '.[dev]'
   ```

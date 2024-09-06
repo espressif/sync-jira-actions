@@ -359,7 +359,7 @@ def _update_github_with_jira_key(gh_issue, jira_issue):
             if retries == 0:
                 raise
             print(f'GitHub edit failed: {error} ({retries} retries)')
-            time.sleep(random.randrange(1, 5))
+            time.sleep(random.randrange(1, 5))  # noqa: S311
             retries -= 1
 
 
@@ -416,12 +416,12 @@ def _get_jira_issue_type(jira, gh_issue):
     for gh_label in gh_labels:
         # Type: Feature Request label should match New Feature issue type in Jira
         if gh_label == 'Type: Feature Request':
-            print('GitHub label is \'Type: Feature Request\'. Mapping to New Feature Jira issue type')
+            print("GitHub label is 'Type: Feature Request'. Mapping to New Feature Jira issue type")
             return {'id': JIRA_NEW_FEATURE_TYPE_ID}  # JIRA API needs JSON here
         # Some projects use Label with bug icon represented by ":bug:" in label name.
         # This if matches those to Bug Jira issue type
         if gh_label == 'Type: Bug :bug:':
-            print('GitHub label is \'Type: Bug :bug:\'. Mapping to Bug Jira issue type')
+            print("GitHub label is 'Type: Bug :bug:'. Mapping to Bug Jira issue type")
             return {'id': JIRA_BUG_TYPE_ID}  # JIRA API needs JSON here
         for issue_type in issue_types:
             type_name = issue_type.name.lower()
@@ -489,7 +489,7 @@ def _find_jira_issue(jira, gh_issue, make_new=False, retries=5):
             # minutes for an old issue (created before the sync was installed), or an issue where the created
             # event sync failed, to sync in.
             print(f'Waiting to see if issue is created by another Action... (retries={retries})')
-            time.sleep(random.randrange(30, 60))
+            time.sleep(random.randrange(30, 60))  # noqa: S311
             return _find_jira_issue(jira, gh_issue, True, retries - 1)
 
         print('Creating missing issue in JIRA')

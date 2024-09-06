@@ -1,16 +1,28 @@
-name: Check pre-commit
+---
+name: 📐 Pre-commit
 
 on:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  check-pre-commit:
+  pre-commit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-      - uses: pre-commit/action@v3.0.1
+          python-version: '3.11' # minimum development version for the project
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
         env:
           SKIP: pip-compile
