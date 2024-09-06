@@ -1,14 +1,74 @@
-name: "GitHub to JIRA Issue Sync"
-description: "Performs simple one way syncing of GitHub issues into JIRA."
-branding:
-  icon: "fast-forward"
-  color: "green"
+---
+name: Sync GitHub Pull requests and Issues to JIRA
+description: >
+  Synchronizes Issues, Issue comments and Pull Requests from Espressif GitHub to Espressif JIRA.
+
 inputs:
   cron_job:
     description: >
-      Whether the action is run as a cron job.
-      Set true to trigger syncing of new PRs.
-    required: false
+      THIS INPUT IS INCLUDED ONLY FOR COMPATIBILITY WITH LEGACY CALLER WORKFLOWS.
+      ALL LOGIC IS DETERMINED BASED ON THE ACTION TRIGGER; THIS INPUT DOES EFFECTIVELY NOTHING
+      Indicates whether the action is being run as a scheduled cron job
+      If so, the it syncs new pull requests during the cron job execution.
+
+  jira-project:
+    description: >
+      The key of the JIRA project where issues will be created or updated.
+      It can be passed either as an input `with: jira-project: <jira_key>`
+      or as an environment variable `ENV: JIRA_PROJECT: <jira_key>` (legacy).
+      If this is not passed one way or another, a check in the sync script will cause the action to fail.
+
+  jira-component:
+    description: 'The JIRA component to which the issues will be assigned. Default = "GitHub"'
+    default: 'GitHub'
+
+  jira-issue-type:
+    description: 'The type of JIRA issue to be created if no labels to the issue are set. Default = "Task"'
+    default: 'Task'
+
 runs:
-  using: "docker"
-  image: "Dockerfile"
+  using: composite
+  steps:
+    - name: Checkout action repository (espressif/sync-jira-actions)
+      uses: actions/checkout@v4
+      with:
+        repository: espressif/sync-jira-actions
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: npm
+
+    - name: Install npm dependencies (markdown2confluence)
+      shell: bash
+      run: npm ci
+
+    - name: Run sync_to_jira.py
+      shell: bash
+      run: |
+        source venv/bin/activate
+        python sync_jira_actions/sync_to_jira.py
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }} # Needs to be passed from caller workflow; by ENV (secure), not by input
+        JIRA_PASS: ${{ env.JIRA_PASS }} # Needs to be passed from caller workflow; by ENV (secure), not by input
+        JIRA_URL: ${{ env.JIRA_URL }} # Needs to be passed from caller workflow; by ENV (secure), not by input
+        JIRA_USER: ${{ env.JIRA_USER }} # Needs to be passed from caller workflow; by ENV (secure), not by input
+        INPUT_CRON_JOB: ${{ github.event_name == 'schedule' && 'true' || '' }}
+        JIRA_PROJECT: ${{ inputs.jira-project }}
+        JIRA_COMPONENT: ${{ inputs.jira-component }}
+        JIRA_ISSUE_TYPE: ${{ inputs.jira-issue-type }}

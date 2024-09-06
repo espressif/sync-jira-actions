@@ -44,7 +44,8 @@ def handle_issue_opened(jira, event):
         return
 
     print('Creating new JIRA issue for new GitHub issue')
-    _create_jira_issue(jira, event['issue'])
+    issue = _create_jira_issue(jira, event['issue'])
+    print(f'✔️ Successfully synchronized new GitHub issue #{gh_issue["number"]} to JIRA issue {issue.key}')
 
 
 def handle_issue_edited(jira, event):
@@ -133,7 +134,8 @@ def handle_comment_created(jira, event):
     gh_comment = event['comment']
 
     jira_issue = _find_jira_issue(jira, event['issue'], True)
-    jira.add_comment(jira_issue.id, _get_jira_comment_body(gh_comment))
+    jira_comment = jira.add_comment(jira_issue.id, _get_jira_comment_body(gh_comment))
+    print(f'✔️ Successfully synchronized comment (ID: {jira_comment.id}) for JIRA issue {jira_issue.key}')
 
 
 def handle_comment_edited(jira, event):
@@ -152,15 +154,17 @@ def handle_comment_edited(jira, event):
             break
 
     if not found:  # if we didn't find the old comment, make a new comment about the edit
-        jira.add_comment(jira_issue.id, _get_jira_comment_body(gh_comment))
+        jira_comment = jira.add_comment(jira_issue.id, _get_jira_comment_body(gh_comment))
+        print(f'✔️ Successfully synchronized comment (ID: {jira_comment.id}) for JIRA issue {jira_issue.key}')
 
 
 def handle_comment_deleted(jira, event):
     gh_comment = event['comment']
     jira_issue = _find_jira_issue(jira, event['issue'], True)
-    jira.add_comment(
+    jira_comment = jira.add_comment(
         jira_issue.id, f"@{gh_comment['user']['login']} deleted [GitHub issue comment|{gh_comment['html_url']}]"
     )
+    print(f'✔️ Successfully synchronized deleted comment (ID: {jira_comment.id}) for JIRA issue {jira_issue.key}')
 
 
 # Works both for issues and pull requests
@@ -224,7 +228,7 @@ def _markdown2wiki(markdown):
                 mdf.write('\n')
 
         try:
-            subprocess.check_call(['markdown2confluence', md_path, conf_path])
+            subprocess.check_call(['npx', 'markdown2confluence', md_path, conf_path])  # noqa: S603, S607
             with open(conf_path, 'r', encoding='utf-8') as file:
                 result = file.read()
             if len(result) > 16384:  # limit any single body of text to 16KB (JIRA API limits total text to 32KB)
@@ -445,7 +449,8 @@ def _find_jira_issue(jira, gh_issue, make_new=False, retries=5):
     """
     url = gh_issue['html_url']
     jql_query = f'issue in issuesWithRemoteLinksByGlobalId("{url}") order by updated desc'
-    print(f'JQL query: {jql_query}')
+    if os.environ.get('ACTIONS_RUNNER_DEBUG') == 'true':
+        print(f'JQL query: {jql_query}')  # Print the JQL query only in debug mode
     res = jira.search_issues(jql_query)
     if not res:
         print(f"WARNING: No JIRA issues have a remote link with globalID '{url}'")

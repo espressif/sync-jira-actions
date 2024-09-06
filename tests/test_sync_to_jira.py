@@ -55,6 +55,7 @@ def test_handle_issue_opened_event(mock_environment, sync_to_jira_main, monkeypa
     }
     mock_environment.write_text(json.dumps(event_data))
     monkeypatch.setenv('GITHUB_EVENT_NAME', 'issues')
+    monkeypatch.setenv('JIRA_PROJECT', 'TEST_PROJECT')
 
     with patch('sync_jira_actions.sync_to_jira.handle_issue_opened') as mock_handle_issue_opened:
         sync_to_jira_main()

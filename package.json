@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@shogobg/markdown2confluence": "^0.1.6"
+  }
+}

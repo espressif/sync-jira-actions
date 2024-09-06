@@ -40,12 +40,17 @@ class _JIRA(JIRA):
 
 def main():
     if 'GITHUB_REPOSITORY' not in os.environ:
-        print('Not running in GitHub action context, nothing to do')
+        print('❌ Not running in GitHub action context, nothing to do')
         return
 
     if not os.environ['GITHUB_REPOSITORY'].startswith('espressif/'):
-        print('Not an Espressif repo, nothing to sync to JIRA')
+        print('❌ Not an Espressif repo, nothing to sync to JIRA')
         return
+
+    # For backward compatibility; handles situation if JIRA_PROJECT is not set in caller workflow either as input or ENV
+    if 'JIRA_PROJECT' not in os.environ:
+        print('❌ JIRA_PROJECT not set, fail!')
+        raise SystemExit(1)
 
     # Connect to Jira server
     print('Connecting to Jira Server...')
@@ -53,15 +58,17 @@ def main():
     # Check if the JIRA_PASS is token or password
     token_or_pass = os.environ['JIRA_PASS']
     if token_or_pass.startswith('token:'):
-        print('Authenticating with JIRA_TOKEN ...')
+        if os.environ.get('ACTIONS_RUNNER_DEBUG') == 'true':
+            print('Authenticating with JIRA_TOKEN ...')
         token = token_or_pass[6:]  # Strip the 'token:' prefix
         jira = _JIRA(os.environ['JIRA_URL'], token_auth=token)
     else:
-        print('Authenticating with JIRA_USER and JIRA_PASS ...')
+        if os.environ.get('ACTIONS_RUNNER_DEBUG') == 'true':
+            print('Authenticating with JIRA_USER and JIRA_PASS ...')
         jira = _JIRA(os.environ['JIRA_URL'], basic_auth=(os.environ['JIRA_USER'], token_or_pass))
 
     # Check if it's a cron job
-    if os.environ.get('INPUT_CRON_JOB'):
+    if os.environ.get('INPUT_CRON_JOB') == 'true':
         print('Running as a cron job. Syncing remaining PRs...')
         sync_remain_prs(jira)
         return
@@ -69,7 +76,8 @@ def main():
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
     with open(os.environ['GITHUB_EVENT_PATH'], 'r', encoding='utf-8') as file:
         event = json.load(file)
-        print(json.dumps(event, indent=4))
+        if os.environ.get('ACTIONS_RUNNER_DEBUG') == 'true':
+            print(json.dumps(event, indent=4))
 
     event_name = os.environ['GITHUB_EVENT_NAME']
 
@@ -79,16 +87,16 @@ def main():
         inputs = event.get('inputs')
 
         if not inputs:
-            print('Triggered workflow_dispatch event without correct inputs. Exiting...')
+            print('❌ Triggered workflow_dispatch event without correct inputs. Exiting...')
             return
 
         input_action = inputs.get('action')
         issue_numbers = inputs.get('issue-numbers')
         if input_action != 'mirror-issues':
-            print('This action needs input "mirror-issues". Exiting...')
+            print('❌ This action needs input "mirror-issues". Exiting...')
             return
         if not issue_numbers:
-            print('This action needs inputs "issue-numbers". Exiting...')
+            print('❌ This action needs inputs "issue-numbers". Exiting...')
             return
 
         print(f'Starting manual sync of issues: {issue_numbers}')

@@ -44,3 +44,4 @@ def sync_remain_prs(jira):
             issue = _find_jira_issue(jira, gh_issue)
             if issue is None:
                 _create_jira_issue(jira, gh_issue)
+                print(f'✔️ Successfully synchronized PR #{pr.number}')
