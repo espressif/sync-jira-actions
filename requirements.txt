@@ -20,7 +20,7 @@ deprecated==1.2.14
     # via pygithub
 idna==3.7
     # via requests
-jira==3.6.0
+jira==3.8.0
     # via sync-jira-actions (pyproject.toml)
 oauthlib==3.2.2
     # via requests-oauthlib
