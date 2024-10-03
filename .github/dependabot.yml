@@ -2,31 +2,49 @@
 version: 2
 
 updates:
-  - package-ecosystem: "pip"
+  - package-ecosystem: pip
     versioning-strategy: increase-if-necessary
-    directory: "/"
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "sunday"
-    commit-message:
-      prefix: "ci(dependabot-pip): "
-    reviewers: ["espressif/ci"]
+      interval: weekly
+      day: sunday
+    open-pull-requests-limit: 0 # Only security updates
+    groups:
+      pip-security-updates:
+        applies-to: security-updates
+        patterns: ['*']
+        update-types: [major, minor, patch]
+    commit-message: {prefix: 'ci(deps-pip): [skip ci]'}
+    reviewers: ['espressif/ci']
+    labels: ['dependencies', 'Status: Reviewing']
 
-  - package-ecosystem: "npm"
+  - package-ecosystem: npm
     versioning-strategy: increase-if-necessary
-    directory: "/"
+    open-pull-requests-limit: 0 # Only security updates
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "sunday"
-    commit-message:
-      prefix: "ci(dependabot-npm): "
-    reviewers: ["espressif/ci"]
+      interval: weekly
+      day: sunday
+    groups:
+      npm-security-updates:
+        applies-to: security-updates
+        patterns: ['*']
+        update-types: [major, minor, patch]
+    commit-message: {prefix: 'ci(deps-npm): [skip ci]'}
+    reviewers: ['espressif/ci']
+    labels: ['dependencies', 'Status: Reviewing']
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    open-pull-requests-limit: 0 # Only security updates
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "sunday"
-    commit-message:
-      prefix: "ci(dependabot-actions): "
-    reviewers: ["espressif/ci"]
+      interval: weekly
+      day: sunday
+    groups:
+      github-actions-security-updates:
+        applies-to: security-updates
+        patterns: ['*']
+        update-types: [major, minor, patch]
+    commit-message: {prefix: 'ci(deps-npm): [skip ci]'}
+    reviewers: ['espressif/ci']
+    labels: ['dependencies', 'Status: Reviewing']
