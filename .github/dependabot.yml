@@ -5,28 +5,46 @@ updates:
   - package-ecosystem: "pip"
     versioning-strategy: increase-if-necessary
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "sunday"
-    commit-message:
-      prefix: "ci(dependabot-pip): "
+    schedule: {interval: monthly}
+    groups:
+      pip-security-updates:
+        applies-to: security-updates
+        update-types: [minor, patch]
+      pip-version-updates:
+        applies-to: version-updates
+        update-types: [minor, patch]
+    commit-message: {prefix: 'ci(dependabot-pip): [skip ci]'}
     reviewers: ["espressif/ci"]
+    pull-request-branch-name: {separator: '-'}
+    open-pull-requests-limit: 0 # Do not open PRs for non-security updates until RDT-930 is merged
 
   - package-ecosystem: "npm"
     versioning-strategy: increase-if-necessary
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "sunday"
-    commit-message:
-      prefix: "ci(dependabot-npm): "
+    schedule: {interval: monthly}
+    groups:
+      npm-security-updates:
+        applies-to: security-updates
+        update-types: [minor, patch]
+      npm-version-updates:
+        applies-to: version-updates
+        update-types: [minor, patch]
+    commit-message: {prefix: 'ci(dependabot-npm): [skip ci]'}
     reviewers: ["espressif/ci"]
+    pull-request-branch-name: {separator: '-'}
+    open-pull-requests-limit: 0 # Do not open PRs for non-security updates until RDT-930 is merged
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "sunday"
-    commit-message:
-      prefix: "ci(dependabot-actions): "
+    schedule: {interval: monthly}
+    groups:
+      actions-security-updates:
+        applies-to: security-updates
+        update-types: [minor, patch]
+      actions-version-updates:
+        applies-to: version-updates
+        update-types: [minor, patch]
+    commit-message: {prefix: 'ci(dependabot-actions): [skip ci]'}
     reviewers: ["espressif/ci"]
+    pull-request-branch-name: {separator: '-'}
+    open-pull-requests-limit: 0 # Do not open PRs for non-security updates until RDT-930 is merged
