@@ -75,6 +75,6 @@ runs:
         JIRA_URL: ${{ env.JIRA_URL }} # Needs to be passed from caller workflow; by ENV (secure), not by input
         JIRA_USER: ${{ env.JIRA_USER }} # Needs to be passed from caller workflow; by ENV (secure), not by input
         INPUT_CRON_JOB: ${{ github.event_name == 'schedule' && 'true' || '' }}
-        JIRA_PROJECT: ${{ inputs.jira-project != '' && inputs.jira-project || env.JIRA_PROJECT }} # Try input, fallback to enn
-        JIRA_COMPONENT: ${{ inputs.jira-component }}
-        JIRA_ISSUE_TYPE: ${{ inputs.jira-issue-type }}
+        JIRA_PROJECT: ${{ inputs.jira-project != '' && inputs.jira-project || env.JIRA_PROJECT }} # Try input, fallback to env
+        JIRA_COMPONENT: ${{ inputs.jira-component || env.JIRA_COMPONENT }} # Try input, fallback to env
+        JIRA_ISSUE_TYPE: ${{ inputs.jira-issue-type || env.JIRA_COMPONENT }}  # Try input, fallback to env

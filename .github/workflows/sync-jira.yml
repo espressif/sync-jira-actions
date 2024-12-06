@@ -48,4 +48,4 @@ jobs:
           JIRA_URL: ${{ secrets.JIRA_URL }}
           JIRA_USER: ${{ secrets.JIRA_USER }}
           JIRA_PROJECT: RDT
-          JIRA_COMPONENT: 'github-actions-development'
+          JIRA_COMPONENT: 'github-actions-development' # pragma: allowlist secret
