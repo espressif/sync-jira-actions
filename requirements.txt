@@ -16,7 +16,7 @@ cryptography==42.0.4
     # via pyjwt
 defusedxml==0.7.1
     # via jira
-deprecated==1.2.14
+deprecated==1.2.18
     # via pygithub
 idna==3.7
     # via requests
