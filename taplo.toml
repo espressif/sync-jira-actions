@@ -1,7 +1,3 @@
-# Configuration file for Taplo, taplo pre-commit hook and VS Cooe extension Even Better TOML
-# TODO: This config needs to be in this config file, until closing: https://github.com/tamasfe/taplo/issues/603 (pyproject.toml support)
-# TODO: Pre-commit hook 'taplo-format' is now excluded in Gitlab CI job 'pre-commit-mr', until closing: https://github.com/tamasfe/taplo/pull/659 (Alpine Linux - MUSL image support)
-
 # General rules for all TOML files, if not specified otherwise
 exclude = ["**/.venv/**", "**/node_modules/**", "**/venv/**", "tests/**"]
 include = ["**/*.toml"]
