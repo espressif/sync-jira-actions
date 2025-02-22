@@ -1,0 +1,16 @@
+---
+name: Block PR Merge If BLOCK-MERGE Label Exists
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, opened, reopened]
+
+jobs:
+  fail-by-label:
+    if: contains(join(github.event.pull_request.labels.*.name, ' '), 'Block Merge')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if PR is labeled "Block Merge"
+        run: |-
+          echo "❌ This PR is labeled as 'Block Merge' and cannot be merged."
+          exit 1
