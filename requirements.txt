@@ -30,7 +30,7 @@ pillow==10.2.0
     # via jira
 pycparser==2.22
     # via cffi
-pygithub==2.2.0
+pygithub==2.6.1
     # via sync-jira-actions (pyproject.toml)
 pyjwt==2.8.0
     # via pygithub
