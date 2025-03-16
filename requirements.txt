@@ -42,7 +42,7 @@ requests==2.31.0
     #   pygithub
     #   requests-oauthlib
     #   requests-toolbelt
-requests-oauthlib==1.3.1
+requests-oauthlib==2.0.0
     # via jira
 requests-toolbelt==1.0.0
     # via jira
