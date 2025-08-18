@@ -177,6 +177,7 @@ Below is a detailed table outlining the necessary configurations:
 | `JIRA_PROJECT`    | Specifies the Jira project to synchronize with.                                              | Mandatory   |
 | `JIRA_ISSUE_TYPE` | Specifies the JIRA issue type for new issues. Defaults to "Task" if not set.                 | Optional    |
 | `JIRA_COMPONENT`  | The name of a JIRA component to add to every synced issue. The component must exist in JIRA. | Optional    |
+| `WEBHOOK_URL`     | URL to be called after successful action                                                     | Optional    |
 | `JIRA_URL`        | The main URL of your JIRA instance.                                                          | Inherited   |
 | `JIRA_USER`       | The username used for logging into JIRA (basic auth).                                        | Inherited   |
 | `JIRA_PASS`       | The JIRA token (for token auth) or password (for basic auth) used for logging in.            | Inherited   |
@@ -187,6 +188,27 @@ Below is a detailed table outlining the necessary configurations:
 > Do not to set secrets at the individual repository level to avoid conflicts and ensure a unified configuration across all projects.
 
 - **Token as JIRA_PASS**: When using a token for `JIRA_PASS`, prefix the token value with `token:` (e.g., `token:Xyz123**************ABC`). This prefix helps distinguish between password and token types, and it will be removed by the script before making the API call.
+- Setting **WEBHOOK_URL** allows you to notify another system that synchronization ran successfully. The main difference from GitHub native webhooks is that this will be executed after sync and will have JIRA ticket information in it.
+
+**Example Webhook Payload:**
+
+```json
+{
+  "action_type": "issues_edited",
+  "github_repository": "espressif/esp-idf",
+  "github_issue": {
+    "number": 12345,
+    "title": "Memory leak in WiFi driver (IDFGH-12345)",
+    "state": "open",
+    "is_pull_request": false
+  },
+  "jira_issue": {
+    "key": "IDFGH-12345",
+    "summary": "GH #12345: Memory leak in WiFi driver",
+    "status": "Open"
+  }
+}
+```
 
 ---
 

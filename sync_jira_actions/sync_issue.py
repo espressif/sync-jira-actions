@@ -41,11 +41,12 @@ def handle_issue_opened(jira, event):
 
     if issue is not None:
         print('Issue already exists (another event was dispatched first?)')
-        return
+        return issue
 
     print('Creating new JIRA issue for new GitHub issue')
     issue = _create_jira_issue(jira, event['issue'])
     print(f'✔️ Successfully synchronized new GitHub issue #{gh_issue["number"]} to JIRA issue {issue.key}')
+    return issue
 
 
 def handle_issue_edited(jira, event):
@@ -63,7 +64,7 @@ def handle_issue_edited(jira, event):
 
     _update_link_resolved(jira, gh_issue, issue)
 
-    _leave_jira_issue_comment(jira, event, 'edited', True, jira_issue=issue)
+    return _leave_jira_issue_comment(jira, event, 'edited', True, jira_issue=issue)
 
 
 def handle_issue_closed(jira, event):
@@ -78,6 +79,8 @@ def handle_issue_closed(jira, event):
         print(f'Could not set GitHub Issue field to Closed when closing issue with error: {error}')
     if issue is not None:
         _update_link_resolved(jira, event['issue'], issue)
+
+    return issue
 
 
 def handle_issue_labeled(jira, event):
@@ -95,6 +98,8 @@ def handle_issue_labeled(jira, event):
     if new_label not in labels:
         labels.append(new_label)
         jira_issue.update(fields={'labels': labels})
+
+    return jira_issue
 
 
 def handle_issue_unlabeled(jira, event):
@@ -115,9 +120,11 @@ def handle_issue_unlabeled(jira, event):
     except ValueError:
         pass  # not in labels list
 
+    return jira_issue
+
 
 def handle_issue_deleted(jira, event):
-    _leave_jira_issue_comment(jira, event, 'deleted', False)
+    return _leave_jira_issue_comment(jira, event, 'deleted', False)
 
 
 def handle_issue_reopened(jira, event):
@@ -128,6 +135,7 @@ def handle_issue_reopened(jira, event):
     except JIRAError as error:
         print(f'Could not set GitHub Issue field to Open when reopening issue with error: {error}')
     _update_link_resolved(jira, event['issue'], issue)
+    return issue
 
 
 def handle_comment_created(jira, event):
@@ -136,6 +144,7 @@ def handle_comment_created(jira, event):
     jira_issue = _find_jira_issue(jira, event['issue'], True)
     jira_comment = jira.add_comment(jira_issue.id, _get_jira_comment_body(gh_comment))
     print(f'✔️ Successfully synchronized comment (ID: {jira_comment.id}) for JIRA issue {jira_issue.key}')
+    return jira_issue
 
 
 def handle_comment_edited(jira, event):
@@ -157,6 +166,8 @@ def handle_comment_edited(jira, event):
         jira_comment = jira.add_comment(jira_issue.id, _get_jira_comment_body(gh_comment))
         print(f'✔️ Successfully synchronized comment (ID: {jira_comment.id}) for JIRA issue {jira_issue.key}')
 
+    return jira_issue
+
 
 def handle_comment_deleted(jira, event):
     gh_comment = event['comment']
@@ -165,10 +176,11 @@ def handle_comment_deleted(jira, event):
         jira_issue.id, f"@{gh_comment['user']['login']} deleted [GitHub issue comment|{gh_comment['html_url']}]"
     )
     print(f'✔️ Successfully synchronized deleted comment (ID: {jira_comment.id}) for JIRA issue {jira_issue.key}')
+    return jira_issue
 
 
 # Works both for issues and pull requests
-def sync_issues_manually(jira, event):
+def sync_issues_manually(jira, event, issue_callback=None):
     # Get issue numbers that were entered manually when triggering workflow
     issue_numbers = event['inputs']['issue-numbers']
     issues = re.split(r'\W+', issue_numbers)
@@ -180,7 +192,10 @@ def sync_issues_manually(jira, event):
         gh_issue = REPO.get_issue(number=int(issue_number))
         event['issue'] = gh_issue.raw_data
         print(f'Mirroring issue: #{issue_number} to Jira')
-        handle_issue_opened(jira, event)
+        jira_issue = handle_issue_opened(jira, event)
+
+        if issue_callback:
+            issue_callback(github_issue=gh_issue, jira_issue=jira_issue)
 
 
 def _check_issue_label(label):

@@ -10,6 +10,7 @@
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ]
     description = "Espressif GitHub Actions for JIRA synchronization"
     dynamic = ["version"]
@@ -22,7 +23,7 @@
     urls.Source = "https://github.com/espressif/sync-jira-actions/tags"
     urls.Tracker = "https://github.com/espressif/sync-jira-actions/tags/issues"
 
-    dependencies              = ["PyGithub==2.2.0", "jira==3.6.0"]
+    dependencies              = ["PyGithub==2.2.0", "jira==3.6.0", "requests>=2.25.0"]
     optional-dependencies.dev = ["czespressif", "just-bin~=1.26.0", "pip-tools~=7.3", "pre-commit>=3.3", "pytest", "pytest-cov"]
 
 [build-system]
