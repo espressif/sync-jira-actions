@@ -31,6 +31,7 @@ from sync_issue import handle_issue_reopened
 from sync_issue import handle_issue_unlabeled
 from sync_issue import sync_issues_manually
 from sync_pr import sync_remain_prs
+from webhook import send_webhook
 
 
 class _JIRA(JIRA):
@@ -70,7 +71,10 @@ def main():  # noqa
     # Check if it's a cron job
     if os.environ.get('INPUT_CRON_JOB') == 'true':
         print('Running as a cron job. Syncing remaining PRs...')
-        sync_remain_prs(jira)
+        sync_remain_prs(
+            jira,
+            issue_callback=lambda **kwargs: send_webhook('cron_job', kwargs['github_issue'], kwargs.get('jira_issue')),
+        )
         return
 
     # The path of the file with the complete webhook event payload. For example, /github/workflow/event.json.
@@ -100,7 +104,13 @@ def main():  # noqa
             return
 
         print(f'Starting manual sync of issues: {issue_numbers}')
-        sync_issues_manually(jira, event)
+        sync_issues_manually(
+            jira,
+            event,
+            issue_callback=lambda **kwargs: send_webhook(
+                'workflow_dispatch', kwargs['github_issue'], kwargs.get('jira_issue')
+            ),
+        )
         return
 
     # The name of the webhook event that triggered the workflow.
@@ -145,7 +155,10 @@ def main():  # noqa
     elif action not in action_handlers[event_name]:
         print(f"No handler '{event_name}' action '{action}'. Skipping.")
     else:
-        action_handlers[event_name][action](jira, event)
+        jira_issue = action_handlers[event_name][action](jira, event)
+
+        # Send webhook notification for successful action
+        send_webhook(f'{event_name}_{action}', gh_issue, jira_issue=jira_issue)
 
 
 if __name__ == '__main__':

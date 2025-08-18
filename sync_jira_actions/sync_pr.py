@@ -21,7 +21,7 @@ from sync_issue import _create_jira_issue
 from sync_issue import _find_jira_issue
 
 
-def sync_remain_prs(jira):
+def sync_remain_prs(jira, issue_callback=None):
     """
     Sync remain PRs (i.e. PRs without any comments) to Jira
     """
@@ -45,3 +45,6 @@ def sync_remain_prs(jira):
             if issue is None:
                 _create_jira_issue(jira, gh_issue)
                 print(f'✔️ Successfully synchronized PR #{pr.number}')
+
+            if issue_callback:
+                issue_callback(github_issue=gh_issue, jira_issue=issue)
