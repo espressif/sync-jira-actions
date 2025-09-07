@@ -55,7 +55,7 @@ runs:
         pip install -r requirements.txt
 
     - name: Install Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: '20'
         cache: npm
