@@ -93,7 +93,7 @@ def handle_issue_labeled(jira, event):
     new_label = _get_jira_label(event['label'])
 
     if _check_issue_label(new_label) is None:
-        return
+        return jira_issue
 
     if new_label not in labels:
         labels.append(new_label)
@@ -112,7 +112,7 @@ def handle_issue_unlabeled(jira, event):
     removed_label = _get_jira_label(event['label'])
 
     if _check_issue_label(removed_label) is None:
-        return
+        return jira_issue
 
     try:
         labels.remove(removed_label)
