@@ -23,6 +23,9 @@ on:
       action: {description: 'Action to be performed', required: true, default: 'mirror-issues'}
       issue-numbers: {description: 'Issue numbers to sync (comma-separated)', required: true}
 
+# Limit to single concurrent run, in case this workflow is triggered multiple times in quick succession
+concurrency: jira_sync
+
 jobs:
   sync-to-jira:
     name: >
@@ -32,13 +35,14 @@ jobs:
           github.event_name == 'issues' && 'New Issue' ||
           github.event_name == 'workflow_dispatch' && 'Manual Sync' }}
     runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'espressif' }} # Do not run in forked repositories
     permissions:
       contents: read
       issues: write
       pull-requests: write
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # TODO: Is this needed?
 
       - name: Run synchronization to Jira
         uses: espressif/sync-jira-actions@v1
