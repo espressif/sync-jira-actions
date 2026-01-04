@@ -18,7 +18,7 @@ defusedxml==0.7.1
     # via jira
 deprecated==1.2.18
     # via pygithub
-idna==3.7
+idna==3.11
     # via requests
 jira==3.6.0
     # via sync-jira-actions (pyproject.toml)
