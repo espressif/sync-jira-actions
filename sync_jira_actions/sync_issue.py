@@ -405,13 +405,15 @@ def _update_components_field(jira, fields, existing_issue=None):
     project_components = jira.project_components(project)
 
     component_names = [c.name for c in project_components]
-    print(f'DEBUG: Looking for component: "{component}" (repr: {repr(component)})')
-    print(f'DEBUG: Available components in project {project.key}: {component_names}')
-    print(f'DEBUG: Component in list: {component in component_names}')
+    print(f'Looking for component: "{component}" (repr: {repr(component)})')
+    print(f'Available components in project {project.key}: {component_names}')
+    print(f'Component in list: {component in component_names}')
 
     if component not in component_names:
         print("JIRA project doesn't contain the configured component, not updating components field")
-        return
+
+        # TODO: remove this after debugging
+        raise SystemExit(1)
 
     print('Setting components field')
 
