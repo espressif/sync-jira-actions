@@ -162,4 +162,6 @@ def main():  # noqa
 
 
 if __name__ == '__main__':
+    # TODO: remove this line after debugging
+    os.environ['ACTIONS_RUNNER_DEBUG'] = 'true'
     main()
