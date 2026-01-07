@@ -173,7 +173,7 @@ def handle_comment_deleted(jira, event):
     gh_comment = event['comment']
     jira_issue = _find_jira_issue(jira, event['issue'], True)
     jira_comment = jira.add_comment(
-        jira_issue.id, f"@{gh_comment['user']['login']} deleted [GitHub issue comment|{gh_comment['html_url']}]"
+        jira_issue.id, f'@{gh_comment["user"]["login"]} deleted [GitHub issue comment|{gh_comment["html_url"]}]'
     )
     print(f'✔️ Successfully synchronized deleted comment (ID: {jira_comment.id}) for JIRA issue {jira_issue.key}')
     return jira_issue
@@ -301,7 +301,7 @@ def _get_summary(gh_issue):
     Format is: GH/PR #<gh issue number>: <github title without any JIRA slug>
     """
     is_pr = 'pull_request' in gh_issue
-    result = f"{'PR' if is_pr else 'GH'} #{gh_issue['number']}: {gh_issue['title']}"
+    result = f'{"PR" if is_pr else "GH"} #{gh_issue["number"]}: {gh_issue["title"]}'
 
     # don't mirror any existing JIRA slug-like pattern from GH title to JIRA summary
     # (note we don't look for a particular pattern as the JIRA issue may have moved)
@@ -413,9 +413,9 @@ def _update_components_field(jira, fields, existing_issue=None):
     fields['components'] = [{'name': component}]
     # keep any existing components as well
     if existing_issue:
-        for component in existing_issue.fields.components:
-            if component.name != component:
-                fields['components'].append({'name': component.name})
+        for existing_component in existing_issue.fields.components:
+            if existing_component.name != component:
+                fields['components'].append({'name': existing_component.name})
 
 
 def _get_jira_issue_type(jira, gh_issue):
@@ -540,7 +540,7 @@ def _leave_jira_issue_comment(jira, event, verb, should_create, jira_issue=None)
 
     jira.add_comment(
         jira_issue.id,
-        f"The [GitHub {'PR' if is_pr else 'issue'}|{gh_issue['html_url']}] has been {verb} by @{user}",
+        f'The [GitHub {"PR" if is_pr else "issue"}|{gh_issue["html_url"]}] has been {verb} by @{user}',
     )
 
     return jira_issue
@@ -553,7 +553,7 @@ def _get_jira_comment_body(gh_comment, body=None):
     """
     if body is None:
         body = _markdown2wiki(gh_comment['body'])
-    return f"[GitHub issue comment|{gh_comment['html_url']}] by @{gh_comment['user']['login']}:\n\n{body}"
+    return f'[GitHub issue comment|{gh_comment["html_url"]}] by @{gh_comment["user"]["login"]}:\n\n{body}'
 
 
 def _get_jira_label(gh_label):
