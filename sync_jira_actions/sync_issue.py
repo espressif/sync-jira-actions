@@ -405,10 +405,9 @@ def _update_components_field(jira, fields, existing_issue=None):
     project_components = jira.project_components(project)
 
     component_names = [c.name for c in project_components]
-    if os.environ.get('ACTIONS_RUNNER_DEBUG') == 'true':
-        print(f'DEBUG: Looking for component: "{component}" (repr: {repr(component)})')
-        print(f'DEBUG: Available components in project {project.key}: {component_names}')
-        print(f'DEBUG: Component in list: {component in component_names}')
+    print(f'DEBUG: Looking for component: "{component}" (repr: {repr(component)})')
+    print(f'DEBUG: Available components in project {project.key}: {component_names}')
+    print(f'DEBUG: Component in list: {component in component_names}')
 
     if component not in component_names:
         print("JIRA project doesn't contain the configured component, not updating components field")
