@@ -392,30 +392,30 @@ def _update_components_field(jira, fields, existing_issue=None):
     Check the component exists in the issue's JIRA project before adding it, to prevent
     fatal errors (especially likely if the JIRA issue has been moved between projects) .
     """
-    component = os.environ.get('JIRA_COMPONENT', '')
-    if not component:
+    target_component = os.environ.get('JIRA_COMPONENT', '')
+    if not target_component:
         print('No JIRA_COMPONENT variable set, not updating components field')
         return
 
     if existing_issue:
         # may be a different project if the issue was moved
-        project = jira.project(existing_issue.fields.project.key)
+        project_key = jira.project(existing_issue.fields.project.key)
     else:
-        project = jira.project(os.environ['JIRA_PROJECT'])
-    project_components = jira.project_components(project)
+        project_key = jira.project(os.environ['JIRA_PROJECT'])
+    project_components = jira.project_components(project_key)
 
-    if component not in [c.name for c in project_components]:
+    if target_component not in [c.name for c in project_components]:
         print("JIRA project doesn't contain the configured component, not updating components field")
         return
 
     print('Setting components field')
 
-    fields['components'] = [{'name': component}]
+    fields['components'] = [{'name': target_component}]
     # keep any existing components as well
     if existing_issue:
-        for component in existing_issue.fields.components:
-            if component.name != component:
-                fields['components'].append({'name': component.name})
+        for existing_component in existing_issue.fields.components:
+            if existing_component.name != target_component:
+                fields['components'].append({'name': existing_component.name})
 
 
 def _get_jira_issue_type(jira, gh_issue):

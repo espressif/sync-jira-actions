@@ -19,12 +19,10 @@ inputs:
       If this is not passed one way or another, a check in the sync script will cause the action to fail.
 
   jira-component:
-    description: 'The JIRA component to which the issues will be assigned. Default = "GitHub"'
-    default: 'GitHub'
+    description: 'The JIRA component to which the issues will be assigned. Default = "GitHub". Can also be set with the JIRA_COMPONENT environment variable.'
 
   jira-issue-type:
-    description: 'The type of JIRA issue to be created if no labels to the issue are set. Default = "Task"'
-    default: 'Task'
+    description: 'The type of JIRA issue to be created if no labels to the issue are set. Default = "Task". Can also be set with the JIRA_ISSUE_TYPE environment variable.'
 
   action: # Required only for 'workflow_dispatch' trigger, handled by code logic
     description: 'Manual action type'
@@ -77,5 +75,5 @@ runs:
         WEBHOOK_URL: ${{ env.WEBHOOK_URL }} # Needs to be passed from caller workflow; by ENV (secure), not by input. URL to send request to with the results of execution
         INPUT_CRON_JOB: ${{ github.event_name == 'schedule' && 'true' || '' }}
         JIRA_PROJECT: ${{ inputs.jira-project != '' && inputs.jira-project || env.JIRA_PROJECT }} # Try input, fallback to env
-        JIRA_COMPONENT: ${{ inputs.jira-component || env.JIRA_COMPONENT }} # Try input, fallback to env
-        JIRA_ISSUE_TYPE: ${{ inputs.jira-issue-type || env.JIRA_COMPONENT }} # Try input, fallback to env
+        JIRA_COMPONENT: ${{ inputs.jira-component || env.JIRA_COMPONENT || 'GitHub' }} # Try input, fallback to env, then default
+        JIRA_ISSUE_TYPE: ${{ inputs.jira-issue-type || env.JIRA_ISSUE_TYPE || 'Task' }} # Try input, fallback to env, then default
