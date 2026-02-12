@@ -25,7 +25,13 @@ def mock_github():
         mock_pr.state = 'open'
         mock_pr.body = 'Test body'
         mock_repo.get_pulls.return_value = [mock_pr]
+        mock_repo.owner.type = 'Organization'
+        mock_repo.owner.login = 'fake'
         mock_repo.has_in_collaborators.return_value = False
+
+        mock_org = MagicMock()
+        mock_org.has_in_members.return_value = False
+        MockGithub.return_value.get_organization.return_value = mock_org
 
         MockGithub.return_value.get_repo.return_value = mock_repo
         yield mock_repo
@@ -70,3 +76,31 @@ def test_sync_remain_prs(sync_pr_module, mock_sync_issue, mock_github):
     # Example of verifying call arguments (simplified)
     call_args = mock_create_jira_issue.call_args
     assert 'Test PR' in call_args[0][1]['title'], 'PR title does not match expected value'
+
+
+def test_sync_remain_prs_skips_org_members(sync_pr_module, mock_sync_issue, mock_github):
+    """Test that PRs from org members are skipped"""
+    mock_jira = MagicMock()
+    mock_create_jira_issue, mock_find_jira_issue = mock_sync_issue
+
+    # Patch the internal function to return 'organization member'
+    with patch.object(sync_pr_module, '_is_collaborator_or_org_member', return_value='organization member'):
+        sync_pr_module.sync_remain_prs(mock_jira)
+
+    # Verify no JIRA issue was created for org member PR
+    assert mock_create_jira_issue.call_count == 0
+    assert mock_find_jira_issue.call_count == 0
+
+
+def test_sync_remain_prs_skips_collaborators(sync_pr_module, mock_sync_issue, mock_github):
+    """Test that PRs from collaborators are skipped"""
+    mock_jira = MagicMock()
+    mock_create_jira_issue, mock_find_jira_issue = mock_sync_issue
+
+    # Patch the internal function to return 'collaborator'
+    with patch.object(sync_pr_module, '_is_collaborator_or_org_member', return_value='collaborator'):
+        sync_pr_module.sync_remain_prs(mock_jira)
+
+    # Verify no JIRA issue was created for collaborator PR
+    assert mock_create_jira_issue.call_count == 0
+    assert mock_find_jira_issue.call_count == 0

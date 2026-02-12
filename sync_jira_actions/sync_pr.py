@@ -21,6 +21,20 @@ from sync_issue import _create_jira_issue
 from sync_issue import _find_jira_issue
 
 
+def _is_collaborator_or_org_member(github, repo, username):
+    """
+    Check if user is a collaborator or organization member.
+    Returns the user type string if the user has direct access to the repo, None otherwise.
+    """
+    if repo.has_in_collaborators(username):
+        return 'collaborator'
+    if repo.owner.type == 'Organization':
+        org = github.get_organization(repo.owner.login)
+        if org.has_in_members(github.get_user(username)):
+            return 'organization member'
+    return None
+
+
 def sync_remain_prs(jira, issue_callback=None):
     """
     Sync remain PRs (i.e. PRs without any comments) to Jira
@@ -29,22 +43,25 @@ def sync_remain_prs(jira, issue_callback=None):
     repo = github.get_repo(os.environ['GITHUB_REPOSITORY'])
     prs = repo.get_pulls(state='open', sort='created', direction='desc')
     for pr in prs:
-        if not repo.has_in_collaborators(pr.user.login):
-            # mock a github issue using current PR
-            gh_issue = {
-                'pull_request': True,
-                'labels': [{'name': lbl.name} for lbl in pr.labels],
-                'number': pr.number,
-                'title': pr.title,
-                'html_url': pr.html_url,
-                'user': {'login': pr.user.login},
-                'state': pr.state,
-                'body': pr.body,
-            }
-            issue = _find_jira_issue(jira, gh_issue)
-            if issue is None:
-                _create_jira_issue(jira, gh_issue)
-                print(f'✔️ Successfully synchronized PR #{pr.number}')
+        user_type = _is_collaborator_or_org_member(github, repo, pr.user.login)
+        if user_type:
+            print(f'⏭️ Skipping PR #{pr.number} - author @{pr.user.login} is a {user_type}')
+            continue
+        # mock a github issue using current PR
+        gh_issue = {
+            'pull_request': True,
+            'labels': [{'name': lbl.name} for lbl in pr.labels],
+            'number': pr.number,
+            'title': pr.title,
+            'html_url': pr.html_url,
+            'user': {'login': pr.user.login},
+            'state': pr.state,
+            'body': pr.body,
+        }
+        issue = _find_jira_issue(jira, gh_issue)
+        if issue is None:
+            _create_jira_issue(jira, gh_issue)
+            print(f'✔️ Successfully synchronized PR #{pr.number}')
 
-            if issue_callback:
-                issue_callback(github_issue=gh_issue, jira_issue=issue)
+        if issue_callback:
+            issue_callback(github_issue=gh_issue, jira_issue=issue)

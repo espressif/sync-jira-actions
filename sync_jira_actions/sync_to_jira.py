@@ -124,14 +124,22 @@ def main():  # noqa
         if 'pull_request' not in event['issue']:
             event['issue']['pull_request'] = True  # we don't care about the value
 
-    # don't sync if user is our collaborator
+    # don't sync if user is collaborator or organization member
     github = Github(os.environ['GITHUB_TOKEN'])
     repo = github.get_repo(os.environ['GITHUB_REPOSITORY'])
     gh_issue = event['issue']
     is_pr = 'pull_request' in gh_issue
-    if is_pr and repo.has_in_collaborators(gh_issue['user']['login']):
-        print('Skipping issue sync for Pull Request from collaborator')
-        return
+    if is_pr:
+        user_type = None
+        if repo.has_in_collaborators(gh_issue['user']['login']):
+            user_type = 'collaborator'
+        elif repo.owner.type == 'Organization':
+            org = github.get_organization(repo.owner.login)
+            if org.has_in_members(github.get_user(gh_issue['user']['login'])):
+                user_type = 'organization member'
+        if user_type:
+            print(f'Skipping PR sync - author @{gh_issue["user"]["login"]} is a {user_type}')
+            return
 
     action_handlers = {
         'issues': {
