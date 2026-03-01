@@ -28,7 +28,7 @@ packaging==23.2
     # via jira
 pillow==10.2.0
     # via jira
-pycparser==2.22
+pycparser==3.0
     # via cffi
 pygithub==2.2.0
     # via sync-jira-actions (pyproject.toml)
