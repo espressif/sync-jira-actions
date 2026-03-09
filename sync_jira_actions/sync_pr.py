@@ -17,6 +17,7 @@
 import os
 
 from github import Github
+from github.GithubException import GithubException
 from sync_issue import _create_jira_issue
 from sync_issue import _find_jira_issue
 
@@ -30,8 +31,11 @@ def _is_collaborator_or_org_member(github, repo, username):
         return 'collaborator'
     if repo.owner.type == 'Organization':
         org = github.get_organization(repo.owner.login)
-        if org.has_in_members(github.get_user(username)):
-            return 'organization member'
+        try:
+            if org.has_in_members(github.get_user(username)):
+                return 'organization member'
+        except GithubException:
+            print(f'⚠️ Could not check org membership for @{username} (possibly a bot account)')
     return None
 
 

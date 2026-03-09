@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
+from github.GithubException import GithubException
 
 
 # Patch the GitHub client before importing modules that use it
@@ -104,3 +105,37 @@ def test_sync_remain_prs_skips_collaborators(sync_pr_module, mock_sync_issue, mo
     # Verify no JIRA issue was created for collaborator PR
     assert mock_create_jira_issue.call_count == 0
     assert mock_find_jira_issue.call_count == 0
+
+
+def test_sync_remain_prs_handles_bot_accounts(sync_pr_module, mock_sync_issue, mock_github):
+    """Test that PRs from bot accounts (e.g. copilot[bot]) don't crash the sync"""
+    mock_jira = MagicMock()
+    mock_create_jira_issue, mock_find_jira_issue = mock_sync_issue
+
+    # Set the PR author to a bot account
+    mock_github.get_pulls.return_value[0].user.login = 'copilot[bot]'
+
+    # Patch the internal function to return None (bot is not recognized as collaborator/org member)
+    with patch.object(sync_pr_module, '_is_collaborator_or_org_member', return_value=None):
+        sync_pr_module.sync_remain_prs(mock_jira)
+
+    # The PR should still be synced (bot is not a collaborator/org member)
+    assert mock_find_jira_issue.call_count == 1
+    assert mock_create_jira_issue.call_count == 1
+
+
+def test_is_collaborator_or_org_member_handles_bot_accounts(sync_pr_module):
+    """Test that _is_collaborator_or_org_member returns None for bot accounts"""
+    mock_github_instance = MagicMock()
+    mock_repo = MagicMock()
+    mock_repo.has_in_collaborators.return_value = False
+    mock_repo.owner.type = 'Organization'
+    mock_repo.owner.login = 'fake-org'
+
+    # Simulate get_user() raising GithubException for bot account
+    mock_github_instance.get_user.side_effect = GithubException(404, 'Not Found', None)
+
+    result = sync_pr_module._is_collaborator_or_org_member(mock_github_instance, mock_repo, 'copilot[bot]')
+
+    # Should return None (not recognized as collaborator or org member) instead of crashing
+    assert result is None

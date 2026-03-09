@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
+from github.GithubException import GithubException
 
 
 @pytest.fixture
@@ -59,4 +60,44 @@ def test_handle_issue_opened_event(mock_environment, sync_to_jira_main, monkeypa
 
     with patch('sync_jira_actions.sync_to_jira.handle_issue_opened') as mock_handle_issue_opened:
         sync_to_jira_main()
+        mock_handle_issue_opened.assert_called_once()
+
+
+def test_pr_opened_by_bot_account_does_not_crash(mock_environment, monkeypatch):
+    """Test that PRs opened by bot accounts (e.g. copilot[bot]) don't crash the sync"""
+    event_data = {
+        'action': 'opened',
+        'pull_request': {
+            'number': 42,
+            'title': 'Bot PR',
+            'body': 'Automated PR',
+            'user': {'login': 'copilot[bot]'},
+            'html_url': 'https://github.com/espressif/esp-idf/pull/42',
+            'state': 'open',
+            'labels': [],
+        },
+    }
+    mock_environment.write_text(json.dumps(event_data))
+    monkeypatch.setenv('GITHUB_EVENT_NAME', 'pull_request')
+    monkeypatch.setenv('JIRA_PROJECT', 'TEST_PROJECT')
+
+    mock_repo = MagicMock()
+    mock_repo.has_in_collaborators.return_value = False
+    mock_repo.owner.type = 'Organization'
+    mock_repo.owner.login = 'espressif'
+
+    mock_github_instance = MagicMock()
+    mock_github_instance.get_repo.return_value = mock_repo
+    # Simulate get_user() raising GithubException for bot account
+    mock_github_instance.get_user.side_effect = GithubException(404, 'Not Found', None)
+
+    with (
+        patch('sync_jira_actions.sync_to_jira.Github', return_value=mock_github_instance),
+        patch('sync_jira_actions.sync_to_jira._JIRA'),
+        patch('sync_jira_actions.sync_to_jira.handle_issue_opened') as mock_handle_issue_opened,
+    ):
+        from sync_jira_actions.sync_to_jira import main
+
+        # This should not raise an exception
+        main()
         mock_handle_issue_opened.assert_called_once()
