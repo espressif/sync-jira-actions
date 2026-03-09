@@ -35,7 +35,7 @@ def _is_collaborator_or_org_member(github, repo, username):
             if org.has_in_members(github.get_user(username)):
                 return 'organization member'
         except GithubException:
-            print(f'⚠️ Could not check org membership for @{username} (possibly a bot account)')
+            print(f'⚠️ Could not check org membership for @{username} (possibly a bot account), treating as external contributor')
     return None
 
 

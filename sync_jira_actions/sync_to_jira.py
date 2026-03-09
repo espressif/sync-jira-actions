@@ -140,7 +140,7 @@ def main():  # noqa
                 if org.has_in_members(github.get_user(gh_issue['user']['login'])):
                     user_type = 'organization member'
             except GithubException:
-                print(f'⚠️ Could not check org membership for @{gh_issue["user"]["login"]} (possibly a bot account)')
+                print(f'⚠️ Could not check org membership for @{gh_issue["user"]["login"]} (possibly a bot account), treating as external contributor')
         if user_type:
             print(f'Skipping PR sync - author @{gh_issue["user"]["login"]} is a {user_type}')
             return
