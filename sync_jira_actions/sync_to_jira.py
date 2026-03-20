@@ -18,6 +18,7 @@ import json
 import os
 
 from github import Github
+from github import GithubException
 from jira import JIRA
 from sync_issue import handle_comment_created
 from sync_issue import handle_comment_deleted
@@ -135,8 +136,12 @@ def main():  # noqa
             user_type = 'collaborator'
         elif repo.owner.type == 'Organization':
             org = github.get_organization(repo.owner.login)
-            if org.has_in_members(github.get_user(gh_issue['user']['login'])):
-                user_type = 'organization member'
+            try:
+                if org.has_in_members(github.get_user(gh_issue['user']['login'])):
+                    user_type = 'organization member'
+            except GithubException:
+                username = gh_issue['user']['login']
+                print(f'WARNING ⚠️ Could not check org membership for @{username},' ' treating as external contributor')
         if user_type:
             print(f'Skipping PR sync - author @{gh_issue["user"]["login"]} is a {user_type}')
             return
