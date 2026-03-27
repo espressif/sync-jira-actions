@@ -29,6 +29,7 @@ from sync_issue import handle_issue_edited
 from sync_issue import handle_issue_labeled
 from sync_issue import handle_issue_opened
 from sync_issue import handle_issue_reopened
+from sync_issue import handle_issue_transferred
 from sync_issue import handle_issue_unlabeled
 from sync_issue import sync_issues_manually
 from sync_pr import sync_remain_prs
@@ -155,6 +156,7 @@ def main():  # noqa
             'reopened': handle_issue_reopened,
             'labeled': handle_issue_labeled,
             'unlabeled': handle_issue_unlabeled,
+            'transferred': handle_issue_transferred,
         },
         'issue_comment': {
             'created': handle_comment_created,

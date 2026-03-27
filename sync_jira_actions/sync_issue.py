@@ -127,6 +127,74 @@ def handle_issue_deleted(jira, event):
     return _leave_jira_issue_comment(jira, event, 'deleted', False)
 
 
+def handle_issue_transferred(jira, event):
+    """
+    Handle the 'transferred' GitHub event: an issue was transferred to another repository.
+
+    Updates the existing Jira issue's remote link to point to the new GitHub issue URL and
+    updates the summary/description, so that the sync action in the destination repository
+    can find the existing Jira issue rather than creating a duplicate.
+    """
+    gh_issue = event['issue']
+
+    # Find the existing Jira issue linked to the original GitHub issue
+    jira_issue = _find_jira_issue(jira, gh_issue, False)
+    if jira_issue is None:
+        print(f'No Jira issue found for transferred GitHub issue #{gh_issue["number"]}. Nothing to update.')
+        return None
+
+    # Get the new issue details from the transfer event payload
+    changes = event.get('changes', {})
+    new_issue = changes.get('new_issue', {})
+    new_url = new_issue.get('html_url') if new_issue else None
+
+    if not new_url:
+        print('WARNING: No new issue URL found in transfer event changes. Cannot update remote link.')
+        return jira_issue
+
+    # Update the remote link globalId to the new GitHub issue URL so the destination
+    # repo's sync action can find this Jira issue without creating a duplicate
+    old_url = gh_issue['html_url']
+    link_updated = False
+    for link in jira.remote_links(jira_issue):
+        if hasattr(link, 'globalId') and link.globalId == old_url:
+            new_link_obj = dict(link.raw['object'])
+            new_link_obj['url'] = new_url
+            new_link_obj['title'] = new_issue.get('title') or new_link_obj.get('title') or gh_issue.get('title', '')
+            link.update(new_link_obj, globalId=new_url, relationship=link.relationship)
+            link_updated = True
+            print(f'Updated remote link URL from {old_url!r} to {new_url!r}')
+            break
+
+    if not link_updated:
+        print(f'WARNING: Could not find remote link with globalId {old_url!r} on {jira_issue.key}')
+
+    # Update the Jira issue summary and description to reflect the new GitHub issue
+    fields = {
+        'summary': _get_summary(new_issue),
+        'description': _get_description(new_issue),
+    }
+    jira_issue.update(fields=fields)
+
+    # Leave a comment noting the transfer
+    new_repo = changes.get('new_repository', {})
+    new_repo_full_name = new_repo.get('full_name', 'another repository')
+    old_repo = event.get('repository', {})
+    old_repo_full_name = old_repo.get('full_name', 'the original repository')
+    sender = event.get('sender', {}).get('login', 'unknown')
+    jira.add_comment(
+        jira_issue.id,
+        f'This issue was transferred from [{old_repo_full_name}|{gh_issue["html_url"]}]'
+        f' to [{new_repo_full_name}|{new_url}] by @{sender}.',
+    )
+
+    print(
+        f'✔️ Successfully handled transfer of GitHub issue #{gh_issue["number"]} to {new_url}'
+        f' - updated Jira issue {jira_issue.key}'
+    )
+    return jira_issue
+
+
 def handle_issue_reopened(jira, event):
     issue = _leave_jira_issue_comment(jira, event, 'reopened', True)
     try:
@@ -486,6 +554,26 @@ def _find_jira_issue(jira, gh_issue, make_new=False, retries=5):
                     )
                     _add_remote_link(jira, issue, gh_issue)
                     return issue
+
+                # Check if this is a transferred GitHub issue: the Jira issue was previously
+                # synced from a different GitHub repo, and the GitHub issue was transferred here.
+                # If a 'synced from' remote link with a GitHub URL exists, update it to the new
+                # URL to avoid creating a duplicate Jira issue.
+                for link in jira.remote_links(issue):
+                    if (
+                        hasattr(link, 'globalId')
+                        and link.globalId != url
+                        and 'github.com' in link.globalId
+                    ):
+                        print(
+                            f'GitHub issue appears to have been transferred: Jira issue {issue.key} '
+                            f'has a remote link from {link.globalId!r}. Updating to new URL {url!r}.'
+                        )
+                        new_link = dict(link.raw['object'])
+                        new_link['url'] = url
+                        new_link['title'] = gh_issue['title']
+                        link.update(new_link, globalId=url, relationship=link.relationship)
+                        return issue
             except jira.exceptions.JIRAError:
                 pass  # issue doesn't exist or unauthorized
 

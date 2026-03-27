@@ -62,6 +62,55 @@ def test_handle_issue_opened_event(mock_environment, sync_to_jira_main, monkeypa
         mock_handle_issue_opened.assert_called_once()
 
 
+def test_handle_issue_transferred_event(mock_environment, monkeypatch):
+    """Test that a 'transferred' issues event is routed to handle_issue_transferred."""
+    old_url = 'https://github.com/espressif/idf-eclipse-plugin/issues/123'
+    new_url = 'https://github.com/espressif/esp-idf/issues/14141'
+    event_data = {
+        'action': 'transferred',
+        'issue': {
+            'number': 123,
+            'title': 'Some Issue (IEP-99)',
+            'body': 'Issue body.',
+            'user': {'login': 'author'},
+            'labels': [],
+            'html_url': old_url,
+            'state': 'open',
+        },
+        'changes': {
+            'new_issue': {
+                'number': 14141,
+                'title': 'Some Issue (IEP-99)',
+                'body': 'Issue body.',
+                'user': {'login': 'author'},
+                'labels': [],
+                'html_url': new_url,
+                'state': 'open',
+            },
+            'new_repository': {'full_name': 'espressif/esp-idf'},
+        },
+        'sender': {'login': 'project-manager'},
+    }
+    mock_environment.write_text(json.dumps(event_data))
+    monkeypatch.setenv('GITHUB_EVENT_NAME', 'issues')
+    monkeypatch.setenv('JIRA_PROJECT', 'TEST_PROJECT')
+
+    mock_github_instance = MagicMock()
+    mock_repo = MagicMock()
+    mock_repo.has_in_collaborators.return_value = False
+    mock_github_instance.get_repo.return_value = mock_repo
+
+    with (
+        patch('sync_jira_actions.sync_to_jira.Github', return_value=mock_github_instance),
+        patch('sync_jira_actions.sync_to_jira._JIRA'),
+        patch('sync_jira_actions.sync_to_jira.handle_issue_transferred') as mock_handler,
+    ):
+        from sync_jira_actions.sync_to_jira import main
+
+        main()
+        mock_handler.assert_called_once()
+
+
 def test_pr_opened_by_bot_account_does_not_crash(mock_environment, monkeypatch):
     """Test that PRs opened by bot accounts (e.g. copilot[bot]) don't crash the sync"""
     from github import GithubException
