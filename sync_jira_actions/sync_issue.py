@@ -563,7 +563,7 @@ def _find_jira_issue(jira, gh_issue, make_new=False, retries=5):
                     if (
                         hasattr(link, 'globalId')
                         and link.globalId != url
-                        and 'github.com' in link.globalId
+                        and link.globalId.startswith('https://github.com/')
                     ):
                         print(
                             f'GitHub issue appears to have been transferred: Jira issue {issue.key} '
