@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-
 @pytest.fixture(autouse=True)
 def setup_env(monkeypatch):
     monkeypatch.setenv('GITHUB_TOKEN', 'fake-token')
@@ -36,7 +35,19 @@ def sync_issue_module(github_client_mock):
     return sync_issue
 
 
-# Example test function
+
+def test_workflow_triggered_on_issue_actions():
+    with open('.github/workflows/sync-jira.yml') as f:
+        content = f.read()
+    assert 'opened' in content
+    assert 'closed' in content
+    assert 'reopened' in content
+    assert 'labeled' in content
+    assert 'unlabeled' in content
+    assert 'deleted' in content
+    assert 'edited' in content
+
+
 def test_handle_issue_opened_creates_jira_issue(sync_issue_module, github_client_mock):
     _, mock_repo = github_client_mock
     mock_jira_client = MagicMock()

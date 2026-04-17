@@ -72,12 +72,12 @@ def handle_issue_closed(jira, event):
     # issues often get closed for the wrong reasons - ie the user
     # found a workaround but the root cause still exists.
     issue = _leave_jira_issue_comment(jira, event, 'closed', False)
-    try:
-        # Sets value of custom GitHub Issue field to Closed
-        issue.update(fields={'customfield_12100': {'value': 'Closed'}})
-    except JIRAError as error:
-        print(f'Could not set GitHub Issue field to Closed when closing issue with error: {error}')
     if issue is not None:
+        try:
+            # Sets value of custom GitHub Issue field to Closed
+            issue.update(fields={'customfield_12100': {'value': 'Closed'}})
+        except JIRAError as error:
+            print(f'Could not set GitHub Issue field to Closed when closing issue with error: {error}')
         _update_link_resolved(jira, event['issue'], issue)
 
     return issue
