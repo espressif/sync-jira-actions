@@ -106,9 +106,30 @@ def test_sync_remain_prs_skips_collaborators(sync_pr_module, mock_sync_issue, mo
     assert mock_find_jira_issue.call_count == 0
 
 
-def test_is_collaborator_or_org_member_handles_bot_accounts(sync_pr_module):
+def test_is_collaborator_or_org_member_handles_bot_accounts(sync_pr_module, monkeypatch):
     """Test that _is_collaborator_or_org_member returns None for bot accounts"""
     from github import GithubException
+
+    monkeypatch.delenv('GITHUB_ORG_READ_TOKEN', raising=False)
+
+    mock_github_instance = MagicMock()
+    mock_github_instance.get_user.side_effect = GithubException(404, 'Not Found', None)
+    mock_repo = MagicMock()
+    mock_repo.has_in_collaborators.return_value = False
+    mock_repo.owner.type = 'Organization'
+    mock_repo.owner.login = 'fake-org'
+
+    with pytest.warns(UserWarning):
+        result = sync_pr_module._is_collaborator_or_org_member(
+            mock_github_instance, mock_repo, 'copilot[bot]'
+        )
+
+    assert result is None
+
+
+def test_is_collaborator_or_org_member_uses_org_read_token(sync_pr_module, monkeypatch):
+    """Test that _is_collaborator_or_org_member uses GITHUB_ORG_READ_TOKEN when available"""
+    monkeypatch.setenv('GITHUB_ORG_READ_TOKEN', 'org-read-token')
 
     mock_github_instance = MagicMock()
     mock_repo = MagicMock()
@@ -116,11 +137,33 @@ def test_is_collaborator_or_org_member_handles_bot_accounts(sync_pr_module):
     mock_repo.owner.type = 'Organization'
     mock_repo.owner.login = 'fake-org'
 
-    mock_github_instance.get_user.side_effect = GithubException(404, 'Not Found', None)
+    with patch('sync_pr.Github') as MockGithub:
+        mock_org_github = MagicMock()
+        mock_org = MagicMock()
+        mock_org.has_in_members.return_value = True
+        mock_org_github.get_organization.return_value = mock_org
+        MockGithub.return_value = mock_org_github
 
-    result = sync_pr_module._is_collaborator_or_org_member(mock_github_instance, mock_repo, 'copilot[bot]')
+        result = sync_pr_module._is_collaborator_or_org_member(mock_github_instance, mock_repo, 'avgustina')
 
-    assert result is None
+        MockGithub.assert_called_once_with('org-read-token')
+
+    assert result == 'organization member'
+
+
+def test_is_collaborator_or_org_member_warns_without_org_read_token(sync_pr_module, monkeypatch):
+    """Test that a warning is emitted when GITHUB_ORG_READ_TOKEN is not set"""
+    monkeypatch.delenv('GITHUB_ORG_READ_TOKEN', raising=False)
+
+    mock_github_instance = MagicMock()
+    mock_github_instance.get_organization.return_value.has_in_members.return_value = False
+    mock_repo = MagicMock()
+    mock_repo.has_in_collaborators.return_value = False
+    mock_repo.owner.type = 'Organization'
+    mock_repo.owner.login = 'fake-org'
+
+    with pytest.warns(UserWarning, match='GITHUB_ORG_READ_TOKEN'):
+        sync_pr_module._is_collaborator_or_org_member(mock_github_instance, mock_repo, 'testuser')
 
 
 def test_sync_remain_prs_handles_bot_accounts(sync_pr_module, mock_sync_issue, mock_github):

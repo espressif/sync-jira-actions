@@ -172,17 +172,21 @@ The GitHub to JIRA Issue Sync workflow requires the configuration of specific en
 
 Below is a detailed table outlining the necessary configurations:
 
-| Variable/Secret   | Description                                                                                  | Requirement |
-| ----------------- | -------------------------------------------------------------------------------------------- | ----------- |
-| `JIRA_PROJECT`    | Specifies the Jira project to synchronize with.                                              | Mandatory   |
-| `JIRA_ISSUE_TYPE` | Specifies the JIRA issue type for new issues. Defaults to "Task" if not set.                 | Optional    |
-| `JIRA_COMPONENT`  | The name of a JIRA component to add to every synced issue. The component must exist in JIRA. | Optional    |
-| `WEBHOOK_URL`     | URL to be called after successful action                                                     | Optional    |
-| `JIRA_URL`        | The main URL of your JIRA instance.                                                          | Inherited   |
-| `JIRA_USER`       | The username used for logging into JIRA (basic auth).                                        | Inherited   |
-| `JIRA_PASS`       | The JIRA token (for token auth) or password (for basic auth) used for logging in.            | Inherited   |
+| Variable/Secret         | Description                                                                                                                                                    | Requirement |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `JIRA_PROJECT`          | Specifies the Jira project to synchronize with.                                                                                                                | Mandatory   |
+| `JIRA_ISSUE_TYPE`       | Specifies the JIRA issue type for new issues. Defaults to "Task" if not set.                                                                                   | Optional    |
+| `JIRA_COMPONENT`        | The name of a JIRA component to add to every synced issue. The component must exist in JIRA.                                                                   | Optional    |
+| `WEBHOOK_URL`           | URL to be called after successful action                                                                                                                       | Optional    |
+| `JIRA_URL`              | The main URL of your JIRA instance.                                                                                                                            | Inherited   |
+| `JIRA_USER`             | The username used for logging into JIRA (basic auth).                                                                                                          | Inherited   |
+| `JIRA_PASS`             | The JIRA token (for token auth) or password (for basic auth) used for logging in.                                                                              | Inherited   |
+| `GITHUB_ORG_READ_TOKEN` | GitHub PAT with `read:org` scope. Required to skip PRs from org members whose membership is **private**. Without it, those PRs are incorrectly synced to Jira. | Inherited   |
 
-- **GitHub Organizational Secrets**: `JIRA_URL`, `JIRA_USER`, `JIRA_PASS` - These secrets are **inherited from the GitHub organizational secrets, as they are common to all projects within the organization**.
+- **GitHub Organizational Secrets**: `JIRA_URL`, `JIRA_USER`, `JIRA_PASS`, `SYNC_JIRA_ORG_READ_TOKEN` - These secrets are **inherited from the GitHub organizational secrets, as they are common to all projects within the organization**.
+
+> \[!NOTE\]
+> `SYNC_JIRA_ORG_READ_TOKEN` is a one-time org-level setup: create a Classic PAT with `read:org` scope on a service account, store it at [github.com/organizations/espressif/settings/secrets/actions](https://github.com/organizations/espressif/settings/secrets/actions) (access: *All repositories*), then add `GITHUB_ORG_READ_TOKEN: ${{ secrets.SYNC_JIRA_ORG_READ_TOKEN }}` to the `env:` block in each repo's `sync-jira.yml`.
 
 > \[!WARNING\]
 > Do not to set secrets at the individual repository level to avoid conflicts and ensure a unified configuration across all projects.

@@ -46,6 +46,9 @@ jobs:
           cron_job: ${{ github.event_name == 'schedule' && 'true' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PAT with read:org scope; stored as an org-level secret in github.com/organizations/espressif/settings/secrets/actions
+          # Required to detect private org membership. Without it, PRs from members with private membership are synced to Jira.
+          GITHUB_ORG_READ_TOKEN: ${{ secrets.SYNC_JIRA_ORG_READ_TOKEN }}
           JIRA_PASS: ${{ secrets.JIRA_PASS }}
           JIRA_PROJECT: IDFSYNTEST   # <---- update for your Jira project
           JIRA_COMPONENT: GitHub

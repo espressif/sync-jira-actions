@@ -69,6 +69,7 @@ runs:
         python sync_jira_actions/sync_to_jira.py
       env:
         GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }} # Needs to be passed from caller workflow; by ENV (secure), not by input
+        GITHUB_ORG_READ_TOKEN: ${{ env.GITHUB_ORG_READ_TOKEN }} # Optional PAT with read:org scope; required to detect private org membership (GITHUB_TOKEN lacks this scope)
         JIRA_PASS: ${{ env.JIRA_PASS }} # Needs to be passed from caller workflow; by ENV (secure), not by input
         JIRA_URL: ${{ env.JIRA_URL }} # Needs to be passed from caller workflow; by ENV (secure), not by input
         JIRA_USER: ${{ env.JIRA_USER }} # Needs to be passed from caller workflow; by ENV (secure), not by input
