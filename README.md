@@ -38,7 +38,7 @@ This action automates the integration of your GitHub repositories with JIRA proj
 - **Custom Field Mapping**: A JIRA custom field named "GitHub Reference" is populated with the URL of the GitHub issue.
 - **Issue Title Sync**: The title of the GitHub issue is updated to include the JIRA issue key.
 - **Bi-directional Comment Sync**: Comments added to a GitHub issue are mirrored in the corresponding JIRA issue. Edits and deletions are also reflected.
-- **Label Synchronization**: Labels added or removed from the GitHub issue are similarly updated in the JIRA issue.
+- **Label Synchronization**: Labels added or removed from a GitHub issue are mirrored in the corresponding JIRA issue (excluding labels prefixed with `Status:` or `Resolution:`, which flow from JIRA back to GitHub).
 - **Remote Issue Link**: After syncing, a [Remote Issue Link](https://developer.atlassian.com/server/jira/platform/creating-remote-issue-links/) is created on the JIRA issue for easy reference back to the GitHub issue.
 
 ## 'Synced From' Link Details
@@ -85,7 +85,7 @@ The GitHub to JIRA Issue Sync Action intelligently creates JIRA issues with spec
 
 There are certain limitations to the data and events that can be synchronized:
 
-- **Labels**: The action does not sync labels between GitHub and JIRA, with the exception of labels that match JIRA issue types. This means that general labels used for categorization or prioritization in GitHub won't automatically reflect in JIRA.
+- **Labels**: Labels that match JIRA issue types determine the issue type at creation time. Changes to such labels after creation do not alter the JIRA issue type (see [Issue Type Synchronization](#issue-type-synchronization)). General labels are synced as JIRA labels via `labeled`/`unlabeled` events, but labels prefixed with `Status:` or `Resolution:` are excluded to avoid feedback loops.
 - **Transitions**: Changes in the status of a GitHub issue, such as closing, reopening, or deleting, do not automatically result in the corresponding transition of the JIRA issue's status. Instead, these actions result in a comment being added to the linked JIRA issue to record the event. This design choice accounts for scenarios where a GitHub issue might be closed by its reporter, but the underlying problem it documents still requires attention and resolution within the JIRA project.
 
 ## Caller project workflow file
@@ -94,20 +94,21 @@ There are certain limitations to the data and events that can be synchronized:
 # FILE: .github/workflows/sync-jira.yml
 ---
 # This GitHub Actions workflow synchronizes GitHub issues, comments, and pull requests with Jira.
-# It triggers on new issues, issue comments, and on a scheduled basis.
+# It triggers on issue events (opened, edited, closed, deleted, reopened, labeled, unlabeled),
+# issue comments (created, edited, deleted), and on a scheduled basis.
 # The workflow uses a custom action to perform the synchronization with Jira (espressif/sync-jira-actions).
 
 name: 🔷 Sync to Jira
 
 run-name: >
   Sync to Jira -
-  ${{ github.event_name == 'issue_comment' && 'Issue Comment' ||
+  ${{ github.event_name == 'issue_comment' && format('Issue Comment ({0})', github.event.action) ||
       github.event_name == 'schedule' && 'New Pull Requests' ||
-      github.event_name == 'issues' && 'New Issue' ||
+      github.event_name == 'issues' && format('Issue ({0})', github.event.action) ||
       github.event_name == 'workflow_dispatch' && 'Manual Sync' }}
 
 on:
-  issues: {types: [opened]}
+  issues: {types: [opened, edited, closed, deleted, reopened, labeled, unlabeled]}
   issue_comment: {types: [created, edited, deleted]}
   schedule: [cron: '0 * * * *']
   workflow_dispatch:
@@ -119,9 +120,9 @@ jobs:
   sync-to-jira:
     name: >
       Sync to Jira -
-      ${{ github.event_name == 'issue_comment' && 'Issue Comment' ||
+      ${{ github.event_name == 'issue_comment' && format('Issue Comment ({0})', github.event.action) ||
           github.event_name == 'schedule' && 'New Pull Requests' ||
-          github.event_name == 'issues' && 'New Issue' ||
+          github.event_name == 'issues' && format('Issue ({0})', github.event.action) ||
           github.event_name == 'workflow_dispatch' && 'Manual Sync' }}
     runs-on: ubuntu-latest
     permissions:

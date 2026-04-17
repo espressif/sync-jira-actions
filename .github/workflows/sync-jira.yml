@@ -1,15 +1,16 @@
 ---
 # This GitHub Actions workflow synchronizes GitHub issues, comments, and pull requests with Jira.
-# It triggers on new issues, issue comments, and on a scheduled basis.
+# It triggers on issue events (opened, edited, closed, deleted, reopened, labeled, unlabeled),
+# issue comments (created, edited, deleted), and on a scheduled basis.
 # The workflow uses a custom action to perform the synchronization with Jira (espressif/sync-jira-actions).
 
 name: 🔷 Sync to Jira
 
 run-name: >
   Sync to Jira -
-  ${{ github.event_name == 'issue_comment' && 'Issue Comment' ||
+  ${{ github.event_name == 'issue_comment' && format('Issue Comment ({0})', github.event.action) ||
       github.event_name == 'schedule' && 'New Pull Requests' ||
-      github.event_name == 'issues' && 'New Issue' ||
+      github.event_name == 'issues' && format('Issue ({0})', github.event.action) ||
       github.event_name == 'workflow_dispatch' && 'Manual Sync' }}
 
 on:
@@ -25,9 +26,9 @@ jobs:
   sync-to-jira:
     name: >
       Sync to Jira -
-      ${{ github.event_name == 'issue_comment' && 'Issue Comment' ||
+      ${{ github.event_name == 'issue_comment' && format('Issue Comment ({0})', github.event.action) ||
           github.event_name == 'schedule' && 'New Pull Requests' ||
-          github.event_name == 'issues' && 'New Issue' ||
+          github.event_name == 'issues' && format('Issue ({0})', github.event.action) ||
           github.event_name == 'workflow_dispatch' && 'Manual Sync' }}
     runs-on: ubuntu-latest
     permissions:
