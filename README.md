@@ -25,6 +25,7 @@ This action automates the integration of your GitHub repositories with JIRA proj
 - [Issue Type Synchronization](#issue-type-synchronization)
   - [How It Works](#how-it-works)
 - [Limitations](#limitations)
+- [Ignoring Pull Requests by Pattern](#ignoring-pull-requests-by-pattern)
 - [Caller project workflow file](#caller-project-workflow-file)
 - [Sync Issues and Pull Requests to JIRA manually](#sync-issues-and-pull-requests-to-jira-manually)
 - [Environment Variables and Secrets](#environment-variables-and-secrets)
@@ -87,6 +88,36 @@ There are certain limitations to the data and events that can be synchronized:
 
 - **Labels**: The action does not sync labels between GitHub and JIRA, with the exception of labels that match JIRA issue types. This means that general labels used for categorization or prioritization in GitHub won't automatically reflect in JIRA.
 - **Transitions**: Changes in the status of a GitHub issue, such as closing, reopening, or deleting, do not automatically result in the corresponding transition of the JIRA issue's status. Instead, these actions result in a comment being added to the linked JIRA issue to record the event. This design choice accounts for scenarios where a GitHub issue might be closed by its reporter, but the underlying problem it documents still requires attention and resolution within the JIRA project.
+
+## Ignoring Pull Requests by Pattern
+
+Some pull requests, such as automated dependency bumps or pre-commit auto-updates, are not useful to mirror into JIRA. The action skips these by default and lets you add more via two inputs.
+
+**Built-in defaults (always applied, case-insensitive):**
+
+- Title prefixes: `build(deps):`, `build(deps-dev):`, `[pre-commit.ci]`
+- Author logins: `dependabot[bot]`, `pre-commit-ci[bot]`
+
+**Extending the defaults** — pass additional comma-separated values via action inputs. Your values are **appended** to the defaults (they do not replace them):
+
+| Input                   | Description                                                                                               |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ignore-title-prefixes` | Comma-separated title prefixes (case-insensitive). A PR is ignored if its title starts with any of these. |
+| `ignore-authors`        | Comma-separated author logins (case-insensitive, exact match).                                            |
+
+**Example:**
+
+```yaml
+- name: Run synchronization to Jira
+  uses: espressif/sync-jira-actions@v1
+  with:
+    ignore-title-prefixes: 'chore(deps):, [my-bot]'
+    ignore-authors: 'renovate[bot], myorg-bot[bot]'
+  env:
+    # ... same env as before
+```
+
+The ignore check runs on both the event-driven PR sync and the hourly cron sweep.
 
 ## Caller project workflow file
 

@@ -30,6 +30,18 @@ inputs:
   issue-numbers: # Required only for 'workflow_dispatch' trigger, handled by code logic
     description: 'Issue numbers to sync (comma-separated)'
 
+  ignore-title-prefixes:
+    description: >
+      Comma-separated list of PR title prefixes to ignore (case-insensitive).
+      Appended to the built-in defaults: "build(deps):", "build(deps-dev):", "[pre-commit.ci]".
+      Example: "chore(deps):, [my-bot]"
+
+  ignore-authors:
+    description: >
+      Comma-separated list of PR author logins to ignore (case-insensitive, exact match).
+      Appended to the built-in defaults: "dependabot[bot]", "pre-commit-ci[bot]".
+      Example: "myorg-bot[bot], renovate[bot]"
+
 runs:
   using: composite
   steps:
@@ -77,3 +89,5 @@ runs:
         JIRA_PROJECT: ${{ inputs.jira-project != '' && inputs.jira-project || env.JIRA_PROJECT }} # Try input, fallback to env
         JIRA_COMPONENT: ${{ inputs.jira-component || env.JIRA_COMPONENT || 'GitHub' }} # Try input, fallback to env, then default
         JIRA_ISSUE_TYPE: ${{ inputs.jira-issue-type || env.JIRA_ISSUE_TYPE || 'Task' }} # Try input, fallback to env, then default
+        INPUT_IGNORE_TITLE_PREFIXES: ${{ inputs.ignore-title-prefixes }} # Comma-separated, appended to defaults
+        INPUT_IGNORE_AUTHORS: ${{ inputs.ignore-authors }} # Comma-separated, appended to defaults

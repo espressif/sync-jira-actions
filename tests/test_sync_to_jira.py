@@ -62,6 +62,91 @@ def test_handle_issue_opened_event(mock_environment, sync_to_jira_main, monkeypa
         mock_handle_issue_opened.assert_called_once()
 
 
+def test_pr_with_ignored_title_prefix_is_skipped(mock_environment, monkeypatch, capsys):
+    """PRs whose title matches a default ignore prefix should not trigger handlers."""
+    event_data = {
+        'action': 'opened',
+        'pull_request': {
+            'number': 244,
+            'title': 'build(deps): bump actions/download-artifact from 6 to 7',
+            'body': 'Dependabot update',
+            'user': {'login': 'somebody'},
+            'html_url': 'https://github.com/espressif/esp-idf/pull/244',
+            'state': 'open',
+            'labels': [],
+        },
+    }
+    mock_environment.write_text(json.dumps(event_data))
+    monkeypatch.setenv('GITHUB_EVENT_NAME', 'pull_request')
+    monkeypatch.setenv('JIRA_PROJECT', 'TEST_PROJECT')
+
+    mock_repo = MagicMock()
+    mock_repo.has_in_collaborators.return_value = False
+    mock_repo.owner.type = 'Organization'
+    mock_repo.owner.login = 'espressif'
+
+    mock_org = MagicMock()
+    mock_org.has_in_members.return_value = False
+
+    mock_github_instance = MagicMock()
+    mock_github_instance.get_repo.return_value = mock_repo
+    mock_github_instance.get_organization.return_value = mock_org
+
+    with (
+        patch('sync_jira_actions.sync_to_jira.Github', return_value=mock_github_instance),
+        patch('sync_jira_actions.sync_to_jira._JIRA'),
+        patch('sync_jira_actions.sync_to_jira.handle_issue_opened') as mock_handle_issue_opened,
+    ):
+        from sync_jira_actions.sync_to_jira import main
+
+        main()
+        mock_handle_issue_opened.assert_not_called()
+
+    captured = capsys.readouterr()
+    assert 'Skipping PR' in captured.out
+
+
+def test_pr_with_ignored_author_is_skipped(mock_environment, monkeypatch):
+    """PRs authored by a default ignored author should not trigger handlers."""
+    event_data = {
+        'action': 'opened',
+        'pull_request': {
+            'number': 99,
+            'title': 'Some innocent title',
+            'body': 'Dependabot update',
+            'user': {'login': 'dependabot[bot]'},
+            'html_url': 'https://github.com/espressif/esp-idf/pull/99',
+            'state': 'open',
+            'labels': [],
+        },
+    }
+    mock_environment.write_text(json.dumps(event_data))
+    monkeypatch.setenv('GITHUB_EVENT_NAME', 'pull_request')
+    monkeypatch.setenv('JIRA_PROJECT', 'TEST_PROJECT')
+
+    mock_repo = MagicMock()
+    mock_repo.has_in_collaborators.return_value = False
+    mock_repo.owner.type = 'Organization'
+    mock_repo.owner.login = 'espressif'
+
+    mock_org = MagicMock()
+    mock_org.has_in_members.return_value = False
+
+    mock_github_instance = MagicMock()
+    mock_github_instance.get_repo.return_value = mock_repo
+    mock_github_instance.get_organization.return_value = mock_org
+
+    with (
+        patch('sync_jira_actions.sync_to_jira.Github', return_value=mock_github_instance),
+        patch('sync_jira_actions.sync_to_jira._JIRA'),
+        patch('sync_jira_actions.sync_to_jira.handle_issue_opened') as mock_handle_issue_opened,
+    ):
+        from sync_jira_actions.sync_to_jira import main
+
+        main()
+        mock_handle_issue_opened.assert_not_called()
+
+
 def test_pr_opened_by_bot_account_does_not_crash(mock_environment, monkeypatch):
     """Test that PRs opened by bot accounts (e.g. copilot[bot]) don't crash the sync"""
     from github import GithubException

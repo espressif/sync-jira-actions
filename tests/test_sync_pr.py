@@ -135,3 +135,34 @@ def test_sync_remain_prs_handles_bot_accounts(sync_pr_module, mock_sync_issue, m
 
     assert mock_find_jira_issue.call_count == 1
     assert mock_create_jira_issue.call_count == 1
+
+
+def test_sync_remain_prs_skips_ignored_title_prefix(sync_pr_module, mock_sync_issue, mock_github, capsys):
+    """PRs whose title matches a default ignore prefix are skipped without syncing."""
+    mock_jira = MagicMock()
+    mock_create_jira_issue, mock_find_jira_issue = mock_sync_issue
+
+    mock_github.get_pulls.return_value[0].title = 'build(deps): bump actions/download-artifact from 6 to 7'
+
+    with patch.object(sync_pr_module, '_is_collaborator_or_org_member', return_value=None):
+        sync_pr_module.sync_remain_prs(mock_jira)
+
+    assert mock_find_jira_issue.call_count == 0
+    assert mock_create_jira_issue.call_count == 0
+    captured = capsys.readouterr()
+    assert 'Skipping PR' in captured.out or 'ignored' in captured.out.lower()
+
+
+def test_sync_remain_prs_skips_ignored_author(sync_pr_module, mock_sync_issue, mock_github, capsys):
+    """PRs whose author matches a default ignored author are skipped without syncing."""
+    mock_jira = MagicMock()
+    mock_create_jira_issue, mock_find_jira_issue = mock_sync_issue
+
+    mock_github.get_pulls.return_value[0].title = 'Some innocuous title'
+    mock_github.get_pulls.return_value[0].user.login = 'dependabot[bot]'
+
+    with patch.object(sync_pr_module, '_is_collaborator_or_org_member', return_value=None):
+        sync_pr_module.sync_remain_prs(mock_jira)
+
+    assert mock_find_jira_issue.call_count == 0
+    assert mock_create_jira_issue.call_count == 0

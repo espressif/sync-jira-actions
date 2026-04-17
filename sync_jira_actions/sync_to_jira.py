@@ -19,6 +19,7 @@ import os
 
 from github import Github
 from github import GithubException
+from ignore_pr import should_ignore_pr
 from jira import JIRA
 from sync_issue import handle_comment_created
 from sync_issue import handle_comment_deleted
@@ -144,6 +145,10 @@ def main():  # noqa
                 print(f'WARNING ⚠️ Could not check org membership for @{username},' ' treating as external contributor')
         if user_type:
             print(f'Skipping PR sync - author @{gh_issue["user"]["login"]} is a {user_type}')
+            return
+        ignore, reason = should_ignore_pr(gh_issue.get('title'), gh_issue['user']['login'])
+        if ignore:
+            print(f'⏭️ Skipping PR #{gh_issue.get("number")} sync - {reason}')
             return
 
     action_handlers = {

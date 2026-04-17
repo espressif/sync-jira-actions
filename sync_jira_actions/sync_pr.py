@@ -18,6 +18,7 @@ import os
 
 from github import Github
 from github import GithubException
+from ignore_pr import should_ignore_pr
 from sync_issue import _create_jira_issue
 from sync_issue import _find_jira_issue
 
@@ -50,6 +51,10 @@ def sync_remain_prs(jira, issue_callback=None):
         user_type = _is_collaborator_or_org_member(github, repo, pr.user.login)
         if user_type:
             print(f'⏭️ Skipping PR #{pr.number} - author @{pr.user.login} is a {user_type}')
+            continue
+        ignore, reason = should_ignore_pr(pr.title, pr.user.login)
+        if ignore:
+            print(f'⏭️ Skipping PR #{pr.number} - {reason}')
             continue
         # mock a github issue using current PR
         gh_issue = {
