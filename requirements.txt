@@ -22,7 +22,7 @@ jira==3.6.0
     # via sync-jira-actions (pyproject.toml)
 oauthlib==3.3.1
     # via requests-oauthlib
-packaging==26.0
+packaging==26.1
     # via jira
 pillow==12.2.0
     # via jira
