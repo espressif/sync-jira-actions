@@ -16,7 +16,7 @@ cryptography==46.0.7
     # via pyjwt
 defusedxml==0.7.1
     # via jira
-idna==3.11
+idna==3.17
     # via requests
 jira==3.6.0
     # via sync-jira-actions (pyproject.toml)
