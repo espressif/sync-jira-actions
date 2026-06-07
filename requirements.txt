@@ -30,7 +30,7 @@ pycparser==3.0
     # via cffi
 pygithub==2.9.0
     # via sync-jira-actions (pyproject.toml)
-pyjwt==2.12.1
+pyjwt==2.13.0
     # via pygithub
 pynacl==1.6.2
     # via pygithub
