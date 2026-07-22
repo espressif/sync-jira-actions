@@ -45,10 +45,6 @@ def main():  # noqa
         print('❌ Not running in GitHub action context, nothing to do')
         return
 
-    if not os.environ['GITHUB_REPOSITORY'].startswith('espressif/'):
-        print('❌ Not an Espressif repo, nothing to sync to JIRA')
-        return
-
     # For backward compatibility; handles situation if JIRA_PROJECT is not set in caller workflow either as input or ENV
     if 'JIRA_PROJECT' not in os.environ:
         print('❌ JIRA_PROJECT not set, fail!')
