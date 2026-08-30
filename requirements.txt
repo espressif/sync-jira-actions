@@ -45,7 +45,7 @@ requests-oauthlib==2.0.0
     # via jira
 requests-toolbelt==1.0.0
     # via jira
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   jira
     #   pygithub
