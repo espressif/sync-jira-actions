@@ -24,7 +24,7 @@ oauthlib==3.3.1
     # via requests-oauthlib
 packaging==26.0
     # via jira
-pillow==12.2.0
+pillow==12.3.0
     # via jira
 pycparser==3.0
     # via cffi
