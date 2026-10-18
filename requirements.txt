@@ -20,7 +20,7 @@ idna==3.11
     # via requests
 jira==3.6.0
     # via sync-jira-actions (pyproject.toml)
-oauthlib==3.3.1
+oauthlib==4.0.0
     # via requests-oauthlib
 packaging==26.0
     # via jira
